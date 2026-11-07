@@ -15,4 +15,4 @@ saves, settings and the game's files in `/data/rotk/` are kept.
 
 `README.txt` in the app has the details. No game files are included.
 
-What changed in each version is in [CHANGELOG.md](../../blob/main/CHANGELOG.md).
+What changed in each version is in [CHANGELOG.md](https://github.com/coru182/reKing/blob/main/CHANGELOG.md).
