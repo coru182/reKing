@@ -1,0 +1,15 @@
+diff -ruN c/config/game.toml d/config/game.toml
+--- a/config/game.toml	2026-11-07 14:14:11.607665079 -0300
++++ b/config/game.toml	2026-11-07 14:14:11.610616766 -0300
+@@ -277,10 +277,7 @@
+ [abi]
+ 
+ # ---- The Return of the King hooks (appended to game.toml by the config build) ----
+-[[hook]]                   # XapiInitProcess: failed disc authentication (0x121C84 < 0) -> continue instead of booting to the dashboard (0x121EE4)
+-at = 0x00121EBE
+-call = "ROTK_DiscCheckFailed"
+-on_true = 0x00121EC3
++# [[hook]] ROTK_DiscCheckFailed (0x121EBE) left out: this default.xbe is media-patched, 0x121EBC is already "jmp 0x121EC3"
+ 
+ [[hook]]                   # frame end: the wait for a vertical blank since the last frame (skipped above 30 fps)
+ at = 0x000D03D3

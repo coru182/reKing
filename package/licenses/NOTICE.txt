@@ -1,0 +1,19 @@
+reKing (PPSA99063): The Return of the King (US Xbox) statically recompiled for the PS5
+
+An unofficial fan project, not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros.,
+the Tolkien Estate, Microsoft or Sony Interactive Entertainment. It holds nothing from the game: the game's code is
+recompiled from the player's own default.xbe, and the game's files are read from the player's own disc image.
+
+What is in the app, and under which terms
+
+- reKing's own code, the PS5 host (ps5/: app shell, entry, input, audio, guest memory) and its changes to the SDK
+  and the port: GPL-3.0 (reKing-GPL-3.0.txt). Parts follow reUndr's PS5 host by bystritskiy (MIT, reUndr-MIT.txt).
+- The Return of the King Xbox port from Athelas by Shagg (MIT, Athelas-MIT.txt).
+- XboxXBE-Recomp by TGP482, the recompiler and runtime (MIT, XboxXBE-Recomp-MIT.txt).
+- Dear ImGui (MIT), toml++ (MIT), stb (public domain / MIT), the Khronos Vulkan headers (Apache-2.0 / MIT),
+  and glslang 15.4.0 (BSD / MIT / Apache-2.0, glslang.txt).
+- RADV from Mesa (MIT and others, Mesa-license.rst), built with PS5_Vulkan's recipe, which with its native link
+  recipe and the PS5 Platform library from the PS5_PayloadSDK fork is GPL-3.0-or-later (PS5_Vulkan-LICENSE.txt,
+  PS5_PayloadSDK-LICENSE.txt). The combined executable is therefore subject to the GPL-3.0-or-later.
+
+The game, its assets and the code generated from it belong to their owners and are not covered by any licence here.
