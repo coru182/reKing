@@ -52,9 +52,13 @@ jobs:
           path: deps/reUndr-ps5
           key: ps5-toolchain-${{ steps.pin.outputs.reundr }}-v1
 
+      # As root, as reUndr-ps5's build expects: its Docker container's git (root) refuses a checkout another user
+      # owns. Then the files go back to the runner's user for the cache and the steps below.
       - name: Build the PS5 toolchain (reUndr-ps5's pinned build, the first time only)
         if: steps.toolchain.outputs.cache-hit != 'true'
-        run: ./setup.sh --toolchain
+        run: |
+          sudo --preserve-env=JOBS ./setup.sh --toolchain
+          sudo chown -R "$(id -u):$(id -g)" deps
 
       - name: Keep the PS5 toolchain for later runs
         if: steps.toolchain.outputs.cache-hit != 'true'
