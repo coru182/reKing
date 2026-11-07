@@ -52,16 +52,14 @@ players, sign in a second user on the PS5 (a guest is enough) and turn on their 
 
 - Native 4K output, rendered at 1080p, 1620p or 4K; 30 or 60 fps
 - PlayStation buttons throughout: the button pictures in hints and menus (Cross, Circle, Square, Triangle), "Press
-  OPTIONS", L2 / R2, and the save messages say PS5
+  OPTIONS", L2 / R2, the save messages say PS5, and the help screen while a level loads shows a PlayStation-layout
+  controller
 - An in-game settings menu: resolution, frame rate, V-Sync, fps counter, texture filtering, sharper menus, field of
   view, draw distance, HUD placement, skippable videos, vibration, deadzones, damage, cheats
 - Every video can be skipped; the EA / New Line logos are skipped
 - Sharper menus at 4K: the menus' full-screen pictures redrawn four times larger
 - Two players, saves on the console
 - No logging while you play
-
-Known limit: the controller picture on the help screen shown for a moment after character select is still the Xbox
-controller.
 
 ## Reporting a problem
 
@@ -138,7 +136,8 @@ the PS5 toolchain isn't kept yet. "Only the PS5 toolchain" prepares that part wi
   decides).
 - `ps5/`: the PS5 host: the entry point, the first start (the disc image unpacked, its screens), the app shell and
   settings, DualSense input (libScePad), sound (sceAudioOut), the in-game menu (Dear ImGui), the PS5 wording of the
-  game's text, and POSIX calls the PS5 doesn't allow from an app.
+  game's text, and POSIX calls the PS5 doesn't allow from an app. `ps5/art/controller.svg` is the help screen's
+  PlayStation-layout controller (`tools/mkcontroller.py` makes the picture the app carries).
 - [reUndr-ps5](https://github.com/bystritskiy/reUndr-ps5) by bystritskiy: the pinned PS5 toolchain (mihawk-99's
   PS5_PayloadSDK and PS5_Vulkan with Mesa RADV), its link recipe and packaging tool, and the parts of its PS5 host
   this one follows.

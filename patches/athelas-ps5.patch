@@ -460,6 +460,38 @@ diff -ruN a/sdk/runtime/kernel/threads.cpp b/sdk/runtime/kernel/threads.cpp
  #else
      cpu_set_t set;
      CPU_ZERO(&set);
+diff -ruN a/src/game/rotk_fonts.cpp b/src/game/rotk_fonts.cpp
+--- a/src/game/rotk_fonts.cpp	2026-11-07 16:26:10.123433703 -0300
++++ b/src/game/rotk_fonts.cpp	2026-11-07 16:26:10.129910168 -0300
+@@ -46,6 +46,9 @@
+ extern std::filesystem::path g_ini_file;  // rotk_settings.cpp: the ROTKFix.ini given, empty without one
+ void PrepareMenuArt();                                                       // rotk_menu_art.cpp
+ bool ReplaceMenuArt(const gpu::pack::Contents& t, gpu::pack::Image& out);  // rotk_menu_art.cpp
++namespace ps5art {
++bool Controller(const gpu::pack::Contents& t, gpu::pack::Image& out);  // PS5: port/ps5/controller_ps5.cpp
++}
+ 
+ namespace {
+ constexpr uint32_t kScale = 4;  // the replacement atlas's size over the Xbox one
+@@ -245,6 +248,7 @@
+ std::shared_future<std::vector<Sharp>> g_prepared;
+ 
+ bool Replace(const gpu::pack::Contents& t, gpu::pack::Image& out) {
++    if (ps5art::Controller(t, out)) return true;  // PS5: the help screen's controller, a PlayStation one
+     if (!t.data || !g_prepared.valid() || (t.format != 0x0B && t.format != 0x24)) return false;
+     const std::vector<Sharp>& fonts = g_prepared.get();
+     if (t.format == 0x24) return ReplaceMenuArt(t, out);  // YUY2: the menu pictures
+@@ -293,8 +297,7 @@
+ 
+ // GameInfo::loaded (rotk_movies.cpp Loaded): the fonts are prepared on a thread of their own
+ void InitFonts() {
+-    if (!g_sharp_text) return;
+-    g_prepared = std::async(std::launch::async, Prepare).share();
+-    gpu::pack::g_builtin_contents = Replace;
++    if (g_sharp_text) g_prepared = std::async(std::launch::async, Prepare).share();
++    gpu::pack::g_builtin_contents = Replace;  // PS5: with sharp_text off too, for the help screen's controller
+ }
+ }  // namespace rotk
 diff -ruN a/src/game/rotk_lang.cpp b/src/game/rotk_lang.cpp
 --- a/src/game/rotk_lang.cpp	2026-11-07 14:14:11.551839289 -0300
 +++ b/src/game/rotk_lang.cpp	2026-11-07 14:14:11.583846718 -0300

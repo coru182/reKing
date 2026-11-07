@@ -17,7 +17,7 @@ VK=$REUNDR/build/deps/PS5_Vulkan
 SDK=$VK/.deps/native/ps5-payload-sdk
 OUT=$ROOT/build-ps5
 TITLE=PPSA99063
-VERSION=1.0.2
+VERSION=1.0.3
 JOBS=${JOBS:-$(nproc)}
 export PATH=/usr/lib/llvm-18/bin:$PATH
 CXX="$SDK/bin/prospero-clang++"
@@ -68,6 +68,21 @@ if has compile; then
         "$OUT/xbe_blocks" "$GAME/assets/default.xbe" "$OUT/host/xbe_blocks.cpp"
     fi
     SRC="$SRC $OUT/host/xbe_blocks.cpp"
+    # the help screen's PlayStation controller (ps5/controller_ps5.cpp), built into the program
+    if [ ! "$OUT/host/controller_png.cpp" -nt "$ROOT/ps5/art/controller.png" ]; then
+        python3 - "$ROOT/ps5/art/controller.png" "$OUT/host/controller_png.cpp" <<'PY'
+import sys
+data = open(sys.argv[1], 'rb').read()
+with open(sys.argv[2], 'w') as o:
+    o.write('// written by build-ps5.sh from ps5/art/controller.png\n')
+    o.write('extern const unsigned int kControllerPngSize = %d;\n' % len(data))
+    o.write('extern const unsigned char kControllerPng[] = {')
+    for i in range(0, len(data), 24):
+        o.write('\n    ' + ','.join(str(b) for b in data[i:i + 24]) + ',')
+    o.write('\n};\n')
+PY
+    fi
+    SRC="$SRC $OUT/host/controller_png.cpp"
     # an object is rebuilt when its source is newer, and the ones that print the version when the version changes
     stamp=$OUT/host/version.stamp
     [ "$(cat "$stamp" 2>/dev/null)" = "$VERSION" ] || echo "$VERSION" > "$stamp"

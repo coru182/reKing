@@ -1,8 +1,12 @@
 # Changelog
 
-## 1.0.2
+## 1.0.3
 
-The first release on GitHub. It includes everything below.
+- The help screen shown while a level loads (after character select) has a PlayStation-layout controller where it
+  had the Xbox controller. The drawing is reKing's own, placed so the game's L2 / R2 and button labels still point at
+  the right buttons.
+
+## 1.0.2
 
 **New in 1.0.2**
 
@@ -58,9 +62,6 @@ The first release on GitHub. It includes everything below.
   - The game's memory runs on the PS5's 16 KB pages.
   - The picture goes to VideoOut through Vulkan's display support.
   - L2 and R2 are named in the game's text.
-
-**Known issue:** the controller picture on the help screen that shows for a moment after character select is still
-the Xbox controller.
 
 **Thanks to:**
 
