@@ -1,6 +1,6 @@
-# Builds the app on GitHub and puts it in a draft release (README.md, "Building on GitHub").
+# Builds the app on GitHub and puts it in a release (README.md, "Making a release on GitHub").
 # The game's default.xbe comes from the repository secret XBE_URL (a private direct-download link), never from the
-# repository; it and the code recompiled from it are never cached or uploaded anywhere but the draft release. Only the
+# repository; it and the code recompiled from it are never cached or uploaded anywhere but the release. Only the
 # PS5 toolchain, which holds nothing from the game, is cached between runs.
 name: Build reKing
 
@@ -11,10 +11,10 @@ on:
         description: Only the PS5 toolchain (prepares it for later runs; no default.xbe needed)
         type: boolean
         default: false
-      draft_release:
-        description: Put the app in a draft release (public only once you publish it)
+      publish:
+        description: Publish the release straight away as the latest (otherwise a draft only you see)
         type: boolean
-        default: true
+        default: false
 
 permissions:
   contents: write
@@ -96,11 +96,12 @@ jobs:
         if: ${{ !inputs.toolchain_only }}
         run: ./build-ps5.sh
 
-      - name: Draft release
-        if: ${{ !inputs.toolchain_only && inputs.draft_release }}
+      - name: Release
+        if: ${{ !inputs.toolchain_only }}
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
+          PUBLISH: ${{ inputs.publish }}
         run: |
           version=$(sed -n 's/^VERSION=//p' build-ps5.sh)
           zip=build-ps5/PPSA99063-$version.zip
@@ -108,9 +109,16 @@ jobs:
             gh release upload "v$version" "$zip" --clobber
             echo "The app replaced the one in release v$version"
           else
-            gh release create "v$version" "$zip" --draft --target "$GITHUB_SHA" --title "reKing $version" \
+            draft=--draft
+            [ "$PUBLISH" = true ] && draft=--latest
+            gh release create "v$version" "$zip" $draft --target "$GITHUB_SHA" --title "reKing $version" \
               --notes-file .github/release-notes.md
-            echo "Draft release v$version made: publish it from the Releases page when you want it public"
+          fi
+          if [ "$PUBLISH" = true ]; then
+            gh release edit "v$version" --draft=false --latest
+            echo "Release v$version is published"
+          else
+            echo "Release v$version is a draft: publish it from the Releases page when you want it public"
           fi
 
       - name: Remove default.xbe and everything made from it

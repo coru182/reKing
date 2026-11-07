@@ -1,8 +1,8 @@
 reKing (PPSA99063): The Return of the King (US Xbox) statically recompiled for the PS5
 
 An unofficial fan project, not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros.,
-the Tolkien Estate, Microsoft or Sony Interactive Entertainment. It holds nothing from the game: the game's code is
-recompiled from the player's own default.xbe, and the game's files are read from the player's own disc image.
+the Tolkien Estate, Microsoft or Sony Interactive Entertainment. It contains none of the game's files: they are read
+from the player's own disc image. The game's program in it is recompiled from the US release's default.xbe.
 
 What is in the app, and under which terms
 

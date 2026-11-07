@@ -1,4 +1,4 @@
-reKing 1.0.0 - The Return of the King (US Xbox), recompiled for the PS5
+reKing 1.0.1 - The Return of the King (US Xbox), recompiled for the PS5
 =======================================================================
 
 An unofficial fan port: the original Xbox game's code, statically recompiled into a native PS5 app. Not an emulator.
@@ -7,18 +7,20 @@ No game files are included: it plays your own copy of the US (NTSC-U) Xbox disc.
 What you need
 -------------
 - A PS5 that runs homebrew, with ShadowMountPlus (it registers apps in /data/homebrew) and an FTP server.
-- Your own disc image (.iso) of The Return of the King, US Xbox release (title EA-062).
-  A clean dump and a media-patched one both work.
+- Your own disc image (.iso) of The Return of the King, US Xbox release (title EA-062). A full dump and a trimmed
+  one, clean or media-patched, all work.
 - About 2.5 GB free on the console, or a USB drive for the disc image.
 
 Install
 -------
-1. Unzip PPSA99063-1.0.0.zip on your computer. You get a folder named PPSA99063.
+1. Unzip PPSA99063-<version>.zip on your computer. You get a folder named PPSA99063.
 2. Over FTP, copy the whole PPSA99063 folder to /data/homebrew/ on the PS5.
    ShadowMountPlus adds a "reKing" tile to the home screen (give it about 30 seconds).
 3. Over FTP, create the folder /data/rotk/ and copy your disc image into it, e.g. /data/rotk/rotk.iso.
    Or put it on a USB drive in a folder named rotk (for example rotk/rotk.iso at the top of the drive).
    The game reads the image directly: nothing is unpacked, and you keep the .iso there.
+
+To update, copy the new PPSA99063 folder over the old one. Your saves and settings in /data/rotk/ are kept.
 
 Play
 ----

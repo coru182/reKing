@@ -24,9 +24,15 @@
 #include "kernel/disc.h"
 #include "kernel/kernel.h"
 #include "ps5/ps5_host.h"
+#include "ps5/xbe_match.h"
 #include "xbe/image_hash.h"
 
 extern const uint64_t kImageSectionsHash;  // written by xbe_recomp from the default.xbe this build was made from
+namespace ps5 {  // written by tools/xbe_blocks.cpp from the same default.xbe (ps5/xbe_match.h)
+extern const uint64_t kXbeLayout;
+extern const uint32_t kXbeBlockCount;
+extern const uint64_t kXbeBlocks[];
+}  // namespace ps5
 namespace rotk {
 extern std::filesystem::path g_ini_file;  // the port's rotk_settings.cpp: ROTK PC's Data folder is beside it
 }
@@ -215,10 +221,14 @@ int main() {
     std::string error;
     if (!ReadXbe(game, disc, xbe, error)) Stop(("ROTK: the disc image could not be read: " + error).c_str());
     if (TitleId(xbe) != 0x4541003E) Stop("ROTK: that disc is another game. It needs The Return of the King (US Xbox).");
-    uint64_t hash = xbe::SectionsHash(xbe);
-    if (hash != kImageSectionsHash)
+    // the same bytes as the build's default.xbe, or the same release with a few bytes of code changed: a
+    // media-patched dump, or a clean one (ps5/xbe_match.h)
+    uint32_t differ = 0;
+    if (xbe::SectionsHash(xbe) != kImageSectionsHash &&
+        !ps5::xbe_match::SameRelease(xbe, ps5::kXbeLayout, ps5::kXbeBlocks, ps5::kXbeBlockCount, differ))
         Stop("ROTK: this is another release of the game (not the US one this build was made from).");
-    LOGI("game: %s is the release this build was made from", IMAGE_XBE);
+    LOGI("game: %s is the release this build was made from%s", IMAGE_XBE,
+         differ ? " (a few bytes of code differ: a media-patched or clean dump)" : "");
 
     sceSystemServiceHideSplashScreen();
     ImGui::CreateContext();  // the renderer's overlay: the in-game menu and the fps counter, as the PC port's main.cpp

@@ -17,7 +17,7 @@ VK=$REUNDR/build/deps/PS5_Vulkan
 SDK=$VK/.deps/native/ps5-payload-sdk
 OUT=$ROOT/build-ps5
 TITLE=PPSA99063
-VERSION=1.0.0
+VERSION=1.0.1
 JOBS=${JOBS:-$(nproc)}
 export PATH=/usr/lib/llvm-18/bin:$PATH
 CXX="$SDK/bin/prospero-clang++"
@@ -62,6 +62,12 @@ if has compile; then
     SRC="$SRC $GAME/sdk/runtime/app/settings_list.cpp $(ls "$GAME"/src/*/*.cpp) $(ls "$ROOT"/ps5/*.cpp)"
     SRC="$SRC $IMGUI/imgui.cpp $IMGUI/imgui_draw.cpp $IMGUI/imgui_tables.cpp $IMGUI/imgui_widgets.cpp"
     SRC="$SRC $IMGUI/backends/imgui_impl_vulkan.cpp"
+    # the release check's data (ps5/xbe_match.h): the build's default.xbe's layout and 256-byte blocks, hashed
+    if [ ! "$OUT/host/xbe_blocks.cpp" -nt "$GAME/assets/default.xbe" ] || [ ! "$OUT/host/xbe_blocks.cpp" -nt "$ROOT/ps5/xbe_match.h" ]; then
+        clang++-18 -std=c++20 -O2 -I"$ROOT" "$ROOT/tools/xbe_blocks.cpp" -o "$OUT/xbe_blocks"
+        "$OUT/xbe_blocks" "$GAME/assets/default.xbe" "$OUT/host/xbe_blocks.cpp"
+    fi
+    SRC="$SRC $OUT/host/xbe_blocks.cpp"
     # an object is rebuilt when its source is newer, and the ones that print the version when the version changes
     stamp=$OUT/host/version.stamp
     [ "$(cat "$stamp" 2>/dev/null)" = "$VERSION" ] || echo "$VERSION" > "$stamp"
