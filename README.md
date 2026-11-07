@@ -75,9 +75,9 @@ which only people with write access to the repository can see until you publish 
 2. In the repository's **Settings > Secrets and variables > Actions**, add the secret `XBE_URL` with that link.
    Optionally add `XBE_SHA256` with the file's checksum (`sha256sum default.xbe`) so a wrong download is caught.
    Secrets never appear in the logs, and workflows from forks don't get them.
-3. **Actions > Build reKing > Run workflow.** The first run also builds the PS5 toolchain and keeps it for the next
-   runs (about two to three hours in all); after that a run takes about an hour. "Only the PS5 toolchain" prepares
-   that part without your `default.xbe`.
+3. **Actions > Build reKing > Run workflow.** A run takes roughly half an hour. When the PS5 toolchain isn't kept
+   yet (the first run, or after a week without runs, when GitHub drops it), the run builds it first, about 20
+   minutes more. "Only the PS5 toolchain" prepares that part without your `default.xbe`.
 4. The app is in **Releases**, as a draft named after the version in `build-ps5.sh`. Publishing it makes it public,
    and the app contains code recompiled from the game.
 
