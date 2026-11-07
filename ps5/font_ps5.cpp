@@ -128,6 +128,7 @@ constexpr uint32_t kScale = 4;
 
 std::mutex g_lock;
 std::unordered_map<uint64_t, std::vector<float>> g_crisp;  // by the atlas's coverage: its crisp copy
+std::vector<std::pair<uint64_t, gpu::pack::Image>> g_made;  // by atlas and colours: the last pictures made
 
 }  // namespace
 
@@ -136,21 +137,39 @@ std::unordered_map<uint64_t, std::vector<float>> g_crisp;  // by the atlas's cov
 bool FontTexture(const gpu::pack::Contents& t, gpu::pack::Image& out) {
     if (t.format != 0x0B || !t.data || !t.palette) return false;
     uint32_t w = t.width, h = t.height;
-    if (w < 128 || h < 128 || w > 1024 || h > 1024 || (w & (w - 1)) || (h & (h - 1)) || t.size < size_t(w) * h)
+    if (w < 64 || h < 64 || w > 1024 || h > 1024 || (w & (w - 1)) || (h & (h - 1)) || t.size < size_t(w) * h)
         return false;
-    // the palette: transparent at 0, opaque at 15, never less opaque on the way
+    // the palette: a ramp from clear (or black) at 0 to the text's colour at 15, in opacity or in brightness, never
+    // going back on the way. How opaque the top is does not matter: text fading in or out, or drawn see-through
+    // ("perfect mode!"), is a ramp to a lower opacity.
     auto alpha = [&](int i) { return int(t.palette[i] >> 24); };
-    if (alpha(0) > 0x30 || alpha(15) < 0xB0) return false;
-    for (int i = 1; i < 16; i++)
-        if (alpha(i) + 8 < alpha(i - 1)) return false;
+    auto light = [&](int i) {
+        uint32_t c = t.palette[i];
+        return int(((c >> 16) & 255) * 3 + ((c >> 8) & 255) * 6 + (c & 255)) / 10;
+    };
+    auto ramp = [](auto f) {
+        if (f(0) > 0x30 || f(15) < f(0) + 24) return false;
+        for (int i = 1; i < 16; i++)
+            if (f(i) + 8 < f(i - 1)) return false;
+        return true;
+    };
+    if (!ramp(alpha) && !ramp(light)) {
+        LOG_FIRST(16, "ps5 text: a %ux%u P8 texture left: its colours are not a ramp (%08X %08X %08X)", w, h,
+                  t.palette[0], t.palette[8], t.palette[15]);
+        return false;
+    }
     // the indices: coverage levels only, mostly empty, and much of the ink full (a letter, not a soft glow)
-    size_t zero = 0, full = 0, ink = 0;
+    size_t zero = 0, full = 0, ink = 0, high = 0;
     for (size_t i = 0; i < size_t(w) * h; i++) {
         uint8_t v = t.data[i];
-        if (v > 15) return false;
+        high += v > 15;
         zero += v == 0, full += v == 15, ink += v != 0;
     }
-    if (zero * 10 < size_t(w) * h * 3 || !ink || full * 100 < ink * 30) return false;
+    if (high || zero * 10 < size_t(w) * h * 3 || !ink || full * 100 < ink * 30) {
+        LOG_FIRST(16, "ps5 text: a %ux%u P8 texture left: not a font (%zu%% empty, %zu%% of its ink full, %zu above 15)",
+                  w, h, zero * 100 / (size_t(w) * h), ink ? full * 100 / ink : 0, high);
+        return false;
+    }
 
     // the atlas in rows (the texture is swizzled), and its crisp copy, made once per atlas whatever its colours
     std::vector<uint8_t> cov(size_t(w) * h);
@@ -172,6 +191,15 @@ bool FontTexture(const gpu::pack::Contents& t, gpu::pack::Image& out) {
         g_crisp[key] = crisp;
         LOGI("ps5 text: a %ux%u font made sharp (%zu%% of its ink full)", w, h, ink ? full * 100 / ink : 0);
     }
+    uint64_t made_key = key ^ Hash(reinterpret_cast<const uint8_t*>(t.palette), 16 * sizeof(uint32_t)) * 31;
+    {
+        std::lock_guard<std::mutex> g(g_lock);
+        for (auto& [k, img] : g_made)
+            if (k == made_key) {
+                out = img;
+                return true;
+            }
+    }
     // its colours by coverage level, blended between levels, as rotk_fonts.cpp does
     const uint32_t W = w * kScale, H = h * kScale;
     out = {};
@@ -189,7 +217,45 @@ bool FontTexture(const gpu::pack::Contents& t, gpu::pack::Image& out) {
         }
     }
     gpu::pack::MakeLevels(out);
+    {
+        std::lock_guard<std::mutex> g(g_lock);
+        if (g_made.size() >= 6) g_made.erase(g_made.begin());
+        g_made.emplace_back(made_key, out);
+    }
     return true;
+}
+
+// The HUD and the menus' small pictures (the portrait's frame, the life bar, the ring, the menus' frames and leaf):
+// drawn about three times their size on a 4K screen, so soft. Each one a 2D draw reads is redrawn four times larger
+// by the renderer (texture_pack.cpp Upscale: Catmull-Rom, then an unsharp mask), once per picture.
+namespace {
+std::mutex g_hud_lock;
+std::vector<uint64_t> g_hud;  // the pictures asked for
+constexpr size_t kMaxHud = 160;
+
+bool Upscale2D(uint64_t hash, uint32_t w, uint32_t h, uint32_t format) {
+    if (w > 256 || h > 256 || w < 16 || h < 16 || size_t(w) * h < 32 * 32) return false;
+    std::lock_guard<std::mutex> g(g_hud_lock);
+    if (std::find(g_hud.begin(), g_hud.end(), hash) != g_hud.end()) return true;
+    if (g_hud.size() >= kMaxHud) {
+        LOG_FIRST(1, "ps5 2d: %zu pictures redrawn larger already: no more", kMaxHud);
+        return false;
+    }
+    g_hud.push_back(hash);
+    LOGI("ps5 2d: a %ux%u picture (format %X) redrawn 4x larger", w, h, format);
+    return true;
+}
+
+bool UpscaleHash(uint64_t hash) {
+    std::lock_guard<std::mutex> g(g_hud_lock);
+    return std::find(g_hud.begin(), g_hud.end(), hash) != g_hud.end();
+}
+}  // namespace
+
+// with "Sharper text and menus" on (ps5/main_ps5.cpp)
+void SharpPictures() {
+    gpu::pack::g_upscale = UpscaleHash;
+    gpu::pack::g_upscale_2d = Upscale2D;
 }
 
 }  // namespace rotk::ps5art

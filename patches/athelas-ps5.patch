@@ -1,6 +1,6 @@
 diff -ruN a/sdk/runtime/core/log.cpp b/sdk/runtime/core/log.cpp
---- a/sdk/runtime/core/log.cpp	2026-11-07 14:14:11.556205985 -0300
-+++ b/sdk/runtime/core/log.cpp	2026-11-07 14:14:11.573782444 -0300
+--- a/sdk/runtime/core/log.cpp	2026-11-07 15:26:12.357692193 -0300
++++ b/sdk/runtime/core/log.cpp	2026-11-07 15:26:18.017768219 -0300
 @@ -1,6 +1,7 @@
  #include "core/log.h"
  
@@ -36,8 +36,8 @@ diff -ruN a/sdk/runtime/core/log.cpp b/sdk/runtime/core/log.cpp
      static const bool all = kVerbose || std::getenv("XBE_LOG_ALL") != nullptr;
      if (!kVerbose && lv < (all ? Level::Info : Level::Error)) return;
 diff -ruN a/sdk/runtime/core/log.h b/sdk/runtime/core/log.h
---- a/sdk/runtime/core/log.h	2026-11-07 14:14:11.556218607 -0300
-+++ b/sdk/runtime/core/log.h	2026-11-07 14:14:11.574128950 -0300
+--- a/sdk/runtime/core/log.h	2026-11-07 15:26:12.357692193 -0300
++++ b/sdk/runtime/core/log.h	2026-11-07 15:26:18.017953607 -0300
 @@ -13,6 +13,8 @@
  void Init(const std::string& dir, const std::string& prefix, bool append = false);
  void Write(Level lv, const char* fmt, ...) __attribute__((format(printf, 2, 3)));
@@ -47,9 +47,117 @@ diff -ruN a/sdk/runtime/core/log.h b/sdk/runtime/core/log.h
  const std::string& Path();
  
  #ifdef NDEBUG
+diff -ruN a/sdk/runtime/gpu/texture_pack.cpp b/sdk/runtime/gpu/texture_pack.cpp
+--- a/sdk/runtime/gpu/texture_pack.cpp	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/gpu/texture_pack.cpp	2026-11-07 17:11:09.804209548 -0300
+@@ -209,6 +209,19 @@
+ BuiltinTexture g_builtin = nullptr;
+ BuiltinContents g_builtin_contents = nullptr;
+ UpscaleTexture g_upscale = nullptr;
++Upscale2D g_upscale_2d = nullptr;
++
++// fn(first, end) over [0, n), split between up to 8 threads (rotk-ps5: an upscale on the draw thread, kept short)
++template <class Fn>
++static void ParallelRows(uint32_t n, Fn fn) {
++    uint32_t k = std::clamp(std::thread::hardware_concurrency(), 1u, 8u);
++    if (n < 64) k = 1;
++    uint32_t step = (n + k - 1) / k;
++    std::vector<std::thread> threads;
++    for (uint32_t a = step; a < n; a += step) threads.emplace_back(fn, a, std::min(a + step, n));
++    fn(0u, std::min(step, n));
++    for (std::thread& t : threads) t.join();
++}
+ 
+ void Upscale(const std::vector<uint8_t>& rgba, uint32_t w, uint32_t h, uint32_t k, std::vector<uint8_t>& out) {
+     // premultiplied, so clear texels' colour does not bleed into the edges
+@@ -228,24 +241,26 @@
+     auto pass = [&](const std::vector<float>& in, uint32_t iw, uint32_t ih, bool horiz, uint32_t on) {
+         uint32_t ow = horiz ? on : iw, oh = horiz ? ih : on, n = horiz ? iw : ih;
+         std::vector<float> o(size_t(ow) * oh * 4);
+-        for (uint32_t d = 0; d < on; d++) {
+-            float f = (d + 0.5f) * float(n) / float(on) - 0.5f;
+-            int i0 = int(std::floor(f));
+-            float wt[4], sum = 0;
+-            for (int t = 0; t < 4; t++) sum += wt[t] = cubic(f - float(i0 - 1 + t));
+-            for (int t = 0; t < 4; t++) wt[t] /= sum;
+-            uint32_t lines = horiz ? ih : iw;
+-            for (uint32_t l = 0; l < lines; l++) {
+-                float acc[4] = {};
+-                for (int t = 0; t < 4; t++) {
+-                    int j = std::clamp(i0 - 1 + t, 0, int(n) - 1);
+-                    size_t at = horiz ? (size_t(l) * iw + j) * 4 : (size_t(j) * iw + l) * 4;
+-                    for (int c = 0; c < 4; c++) acc[c] += wt[t] * in[at + c];
++        ParallelRows(on, [&](uint32_t first, uint32_t end) {
++            for (uint32_t d = first; d < end; d++) {
++                float f = (d + 0.5f) * float(n) / float(on) - 0.5f;
++                int i0 = int(std::floor(f));
++                float wt[4], sum = 0;
++                for (int t = 0; t < 4; t++) sum += wt[t] = cubic(f - float(i0 - 1 + t));
++                for (int t = 0; t < 4; t++) wt[t] /= sum;
++                uint32_t lines = horiz ? ih : iw;
++                for (uint32_t l = 0; l < lines; l++) {
++                    float acc[4] = {};
++                    for (int t = 0; t < 4; t++) {
++                        int j = std::clamp(i0 - 1 + t, 0, int(n) - 1);
++                        size_t at = horiz ? (size_t(l) * iw + j) * 4 : (size_t(j) * iw + l) * 4;
++                        for (int c = 0; c < 4; c++) acc[c] += wt[t] * in[at + c];
++                    }
++                    size_t to = horiz ? (size_t(l) * ow + d) * 4 : (size_t(d) * ow + l) * 4;
++                    for (int c = 0; c < 4; c++) o[to + c] = acc[c];
+                 }
+-                size_t to = horiz ? (size_t(l) * ow + d) * 4 : (size_t(d) * ow + l) * 4;
+-                for (int c = 0; c < 4; c++) o[to + c] = acc[c];
+             }
+-        }
++        });
+         return o;
+     };
+     std::vector<float> big = pass(pass(src, w, h, true, W), W, h, false, H);
+@@ -254,16 +269,18 @@
+     int r = int(k);
+     for (int axis = 0; axis < 2; axis++) {
+         std::vector<float> t = blur;
+-        for (uint32_t y = 0; y < H; y++)
+-            for (uint32_t x = 0; x < W; x++) {
+-                float acc[4] = {};
+-                for (int o = -r; o <= r; o++) {
+-                    int xx = axis ? int(x) : std::clamp(int(x) + o, 0, int(W) - 1);
+-                    int yy = axis ? std::clamp(int(y) + o, 0, int(H) - 1) : int(y);
+-                    for (int c = 0; c < 4; c++) acc[c] += t[(size_t(yy) * W + xx) * 4 + c];
++        ParallelRows(H, [&](uint32_t first, uint32_t end) {
++            for (uint32_t y = first; y < end; y++)
++                for (uint32_t x = 0; x < W; x++) {
++                    float acc[4] = {};
++                    for (int o = -r; o <= r; o++) {
++                        int xx = axis ? int(x) : std::clamp(int(x) + o, 0, int(W) - 1);
++                        int yy = axis ? std::clamp(int(y) + o, 0, int(H) - 1) : int(y);
++                        for (int c = 0; c < 4; c++) acc[c] += t[(size_t(yy) * W + xx) * 4 + c];
++                    }
++                    for (int c = 0; c < 4; c++) blur[(size_t(y) * W + x) * 4 + c] = acc[c] / float(2 * r + 1);
+                 }
+-                for (int c = 0; c < 4; c++) blur[(size_t(y) * W + x) * 4 + c] = acc[c] / float(2 * r + 1);
+-            }
++        });
+     }
+     out.resize(size_t(W) * H * 4);
+     for (size_t i = 0; i < size_t(W) * H; i++) {
+diff -ruN a/sdk/runtime/gpu/texture_pack.h b/sdk/runtime/gpu/texture_pack.h
+--- a/sdk/runtime/gpu/texture_pack.h	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/gpu/texture_pack.h	2026-11-07 17:11:09.805761255 -0300
+@@ -53,6 +53,10 @@
+ // console made it): true for one to redraw, at g_upscale_factor times its size, cubic with its edges sharpened
+ using UpscaleTexture = bool (*)(uint64_t hash);
+ extern UpscaleTexture g_upscale;
++// rotk-ps5: a small picture a 2D draw (the HUD, menus) reads, asked once as it binds: true to have it redrawn like
++// g_upscale's (g_upscale then answers true for its hash)
++using Upscale2D = bool (*)(uint64_t hash, uint32_t width, uint32_t height, uint32_t format);
++extern Upscale2D g_upscale_2d;
+ // rgba (w x h, rows packed) redrawn k times larger, sharp: cubic, then an unsharp mask scaled to the new size
+ void Upscale(const std::vector<uint8_t>& rgba, uint32_t w, uint32_t h, uint32_t k, std::vector<uint8_t>& out);
+ // an RGBA8 or BGRA8 picture's mip levels below level 0, each made by halving
 diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
---- a/sdk/runtime/gpu/vk.cpp	2026-11-07 14:14:11.557168291 -0300
-+++ b/sdk/runtime/gpu/vk.cpp	2026-11-07 14:14:11.574415610 -0300
+--- a/sdk/runtime/gpu/vk.cpp	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/gpu/vk.cpp	2026-11-07 17:11:21.243104524 -0300
 @@ -2,10 +2,12 @@
  // ring, render targets by console address, Clear, and Present showing the front buffer. Draws are not done yet: every
  // other call is a safe no-op, logged once.
@@ -87,7 +195,23 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
  namespace {
  
  using namespace gpu::vk;
-@@ -341,9 +352,9 @@
+@@ -167,6 +178,7 @@
+     double fps_ = 0;
+     uint64_t fps_frames_ = 0;
+     uint64_t fps_start_ = 0;
++    bool hud_draw_ = false;  // rotk-ps5: the draw binding its textures is a 2D one (g_upscale_2d)
+ 
+     // draws
+     struct Tex {
+@@ -174,6 +186,7 @@
+         TextureDesc d;
+         uint32_t levels = 1, host_w = 0, host_h = 0;
+         uint64_t sig = 0, frame = 0, palette = 0;
++        bool hud_asked = false;  // rotk-ps5: g_upscale_2d asked about it
+         // a texture pack's file drawn in its place (TexturePack): its view, owned by pack_cache_ or by own below
+         VkImageView repl = VK_NULL_HANDLE;
+         uint32_t repl_w = 0, repl_h = 0;
+@@ -341,9 +354,9 @@
      std::vector<VkExtensionProperties> ext(n);
      vkEnumerateInstanceExtensionProperties(nullptr, &n, ext.data());
      ext.resize(n);
@@ -99,7 +223,7 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
      VkApplicationInfo app_info{VK_STRUCTURE_TYPE_APPLICATION_INFO};
      app_info.pApplicationName = app::kGame.log;
      app_info.pEngineName = "taxbox";
-@@ -355,11 +366,75 @@
+@@ -355,11 +368,75 @@
      VkResult r = vkCreateInstance(&ci, nullptr, &instance_);
      if (r != VK_SUCCESS) return Fail("vkCreateInstance", r);
      LoadInstance(instance_);
@@ -175,7 +299,7 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
  bool VkBackend::CreateSurface() {
      VkWin32SurfaceCreateInfoKHR ci{VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR};
      ci.hinstance = ::GetModuleHandleW(nullptr);
-@@ -369,6 +444,7 @@
+@@ -369,6 +446,7 @@
      if (r != VK_SUCCESS) return Fail("vkCreateWin32SurfaceKHR", r);
      return true;
  }
@@ -183,7 +307,7 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
  
  bool VkBackend::PickDevice() {
      uint32_t n = 0;
-@@ -497,9 +573,13 @@
+@@ -497,9 +575,13 @@
      if (r != VK_SUCCESS) return Fail("vkGetPhysicalDeviceSurfaceCapabilitiesKHR", r);
      VkExtent2D ext = caps.currentExtent;
      if (ext.width == 0xFFFFFFFFu) {
@@ -197,7 +321,25 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
          ext.width = std::clamp(ext.width, caps.minImageExtent.width, caps.maxImageExtent.width);
          ext.height = std::clamp(ext.height, caps.minImageExtent.height, caps.maxImageExtent.height);
      }
-@@ -1598,7 +1678,8 @@
+@@ -1562,6 +1644,17 @@
+             tx.sig = UploadTexture(tx, p, pal_va ? colours : nullptr) ? sig : 0;  // a failed one is tried again
+         }
+     }
++    // rotk-ps5: a picture a 2D draw reads, without a replacement: asked once whether it is to be redrawn larger; then
++    // its remembered "no replacement" is forgotten and it is uploaded again on its next check, redrawn by g_upscale
++    if (hud_draw_ && !tx.repl && !tx.hud_asked && tx.pack_hash && !d.linear && !d.cube && d.depth == 1) {
++        tx.hud_asked = true;
++        auto it = pack_cache_.find(tx.pack_hash);
++        if ((it == pack_cache_.end() || !it->second.img.view) &&
++            pack::g_upscale_2d(tx.pack_hash, d.width, d.height, d.format)) {
++            if (it != pack_cache_.end()) pack_cache_.erase(it);
++            tx.sig = 0;
++        }
++    }
+     // a replacement is sampled at its own size: the shader's coordinates are 0..1 (or divided by the console's size
+     // for linear textures, texsize), so only smooth_2d's texel step needs the new size
+     if (tx.repl) {
+@@ -1598,7 +1691,8 @@
          for (uint32_t l = 0; l < tx.levels; l++) {
              uint32_t pitch = 0;
              DecodeLevel(d, l, f, p, colours, px, pitch);
@@ -207,7 +349,7 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
                  // the level as decoded, rows tightly packed
                  uint32_t rb = pack::RowBytes(pf, d.width), prow = pack::Rows(pf, d.height);
                  std::vector<uint8_t>& out = levels.emplace_back(size_t(rb) * prow, 0);
-@@ -1820,6 +1901,9 @@
+@@ -1820,6 +1914,9 @@
      si.addressModeV = VkAddress(t[kTssAddressV]);
      si.addressModeW = VkAddress(t[kTssAddressW]);
      si.mipLodBias = Bits(t[kTssMipLodBias]) + (target ? 0.0f : app::Get().lod_bias);
@@ -217,7 +359,18 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
      si.minLod = float(t[kTssMaxMipLevel]);
      si.maxLod = mip ? VK_LOD_CLAMP_NONE : si.minLod;
      // Vulkan's border is one of three colours: the nearest of transparent black, opaque black, opaque white
-@@ -2535,7 +2619,18 @@
+@@ -2009,7 +2106,10 @@
+     // stage textures (uploads and copies end the rendering), then the pixel shader made for them
+     StageBind sb[4];
+     TexInfo info[4];
++    // rotk-ps5: a 2D draw (the HUD, menus): its small pictures may be redrawn larger (pack::g_upscale_2d)
++    hud_draw_ = pack::g_upscale_2d && g_screen_space_test && !g_movie && g_screen_space_test(s);
+     for (int i = 0; i < 4; i++) BindTexture(s, i, rt, ds, sb[i], info[i]);
++    hud_draw_ = false;
+     // a texture pack's picture can fill much of the ring: finished now, while nothing of this draw's own (constants,
+     // vertices) sits in it, so they still fit; the uploaded images and their layouts are kept across the submit
+     if (Cmd() && frames_[frame_].used > kUploadSize - kUploadReserve) Submit(true);
+@@ -2535,7 +2635,18 @@
      if (!ui_) return;
      std::lock_guard lock(app::UiLock());
      ImGui_ImplVulkan_NewFrame();
@@ -236,7 +389,7 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
      ImGui::NewFrame();
      if (app::kGame.ui) app::kGame.ui(fps_);
      app::DrawOverlay(fps_);
-@@ -2576,7 +2671,8 @@
+@@ -2576,7 +2687,8 @@
  
  // presents a second, counted over half a second
  void VkBackend::CountFps() {
@@ -247,8 +400,8 @@ diff -ruN a/sdk/runtime/gpu/vk.cpp b/sdk/runtime/gpu/vk.cpp
      fps_frames_++;
      if (now - fps_start_ >= 500) {
 diff -ruN a/sdk/runtime/gpu/vk_loader.cpp b/sdk/runtime/gpu/vk_loader.cpp
---- a/sdk/runtime/gpu/vk_loader.cpp	2026-11-07 14:14:11.557222273 -0300
-+++ b/sdk/runtime/gpu/vk_loader.cpp	2026-11-07 14:14:11.574828745 -0300
+--- a/sdk/runtime/gpu/vk_loader.cpp	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/gpu/vk_loader.cpp	2026-11-07 15:26:18.018582948 -0300
 @@ -5,6 +5,10 @@
  #define NOMINMAX
  #endif
@@ -271,8 +424,8 @@ diff -ruN a/sdk/runtime/gpu/vk_loader.cpp b/sdk/runtime/gpu/vk_loader.cpp
      g_library = dlopen("libvulkan.so.1", RTLD_NOW | RTLD_LOCAL);
      if (!g_library) {
 diff -ruN a/sdk/runtime/gpu/vk_loader.h b/sdk/runtime/gpu/vk_loader.h
---- a/sdk/runtime/gpu/vk_loader.h	2026-11-07 14:14:11.557235537 -0300
-+++ b/sdk/runtime/gpu/vk_loader.h	2026-11-07 14:14:11.575366732 -0300
+--- a/sdk/runtime/gpu/vk_loader.h	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/gpu/vk_loader.h	2026-11-07 15:26:18.018630217 -0300
 @@ -26,6 +26,12 @@
      X(vkGetPhysicalDeviceSurfacePresentModesKHR) GPU_VK_INSTANCE_WIN32(X)
  #ifdef _WIN32
@@ -287,8 +440,8 @@ diff -ruN a/sdk/runtime/gpu/vk_loader.h b/sdk/runtime/gpu/vk_loader.h
  #define GPU_VK_INSTANCE_WIN32(X)
  #endif
 diff -ruN a/sdk/runtime/kernel/boot.cpp b/sdk/runtime/kernel/boot.cpp
---- a/sdk/runtime/kernel/boot.cpp	2026-11-07 14:14:11.557292867 -0300
-+++ b/sdk/runtime/kernel/boot.cpp	2026-11-07 14:14:11.576174072 -0300
+--- a/sdk/runtime/kernel/boot.cpp	2026-11-07 15:26:12.362471130 -0300
++++ b/sdk/runtime/kernel/boot.cpp	2026-11-07 15:26:18.018754269 -0300
 @@ -193,6 +193,11 @@
          LOGE("relaunch: cannot start %s.exe (%lu)", exe, GetLastError());
      }
@@ -302,8 +455,8 @@ diff -ruN a/sdk/runtime/kernel/boot.cpp b/sdk/runtime/kernel/boot.cpp
      char self[4096] = {};
      ssize_t n = readlink("/proc/self/exe", self, sizeof(self) - 1);
 diff -ruN a/sdk/runtime/kernel/memory.cpp b/sdk/runtime/kernel/memory.cpp
---- a/sdk/runtime/kernel/memory.cpp	2026-11-07 14:14:11.557495021 -0300
-+++ b/sdk/runtime/kernel/memory.cpp	2026-11-07 14:14:11.577074778 -0300
+--- a/sdk/runtime/kernel/memory.cpp	2026-11-07 15:26:12.363531140 -0300
++++ b/sdk/runtime/kernel/memory.cpp	2026-11-07 15:26:18.018888829 -0300
 @@ -11,6 +11,8 @@
  #ifdef _WIN32
  #define WIN32_LEAN_AND_MEAN
@@ -425,8 +578,8 @@ diff -ruN a/sdk/runtime/kernel/memory.cpp b/sdk/runtime/kernel/memory.cpp
      madvise(g_base + first, size_t(end - first), MADV_DONTNEED);
      mprotect(g_base + first, size_t(end - first), PROT_NONE);
 diff -ruN a/sdk/runtime/kernel/threads.cpp b/sdk/runtime/kernel/threads.cpp
---- a/sdk/runtime/kernel/threads.cpp	2026-11-07 14:14:11.557583217 -0300
-+++ b/sdk/runtime/kernel/threads.cpp	2026-11-07 14:14:11.577499290 -0300
+--- a/sdk/runtime/kernel/threads.cpp	2026-11-07 15:26:12.363531140 -0300
++++ b/sdk/runtime/kernel/threads.cpp	2026-11-07 15:26:18.019034389 -0300
 @@ -12,6 +12,10 @@
  #include <windows.h>
  #else
@@ -461,8 +614,8 @@ diff -ruN a/sdk/runtime/kernel/threads.cpp b/sdk/runtime/kernel/threads.cpp
      cpu_set_t set;
      CPU_ZERO(&set);
 diff -ruN a/src/game/rotk_fonts.cpp b/src/game/rotk_fonts.cpp
---- a/src/game/rotk_fonts.cpp	2026-11-07 17:00:03.070590525 -0300
-+++ b/src/game/rotk_fonts.cpp	2026-11-07 17:00:03.072797222 -0300
+--- a/src/game/rotk_fonts.cpp	2026-11-07 15:26:12.252125241 -0300
++++ b/src/game/rotk_fonts.cpp	2026-11-07 16:59:03.604094060 -0300
 @@ -46,6 +46,12 @@
  extern std::filesystem::path g_ini_file;  // rotk_settings.cpp: the ROTKFix.ini given, empty without one
  void PrepareMenuArt();                                                       // rotk_menu_art.cpp
@@ -531,8 +684,8 @@ diff -ruN a/src/game/rotk_fonts.cpp b/src/game/rotk_fonts.cpp
  }
  }  // namespace rotk
 diff -ruN a/src/game/rotk_lang.cpp b/src/game/rotk_lang.cpp
---- a/src/game/rotk_lang.cpp	2026-11-07 14:14:11.551839289 -0300
-+++ b/src/game/rotk_lang.cpp	2026-11-07 14:14:11.583846718 -0300
+--- a/src/game/rotk_lang.cpp	2026-11-07 15:26:12.252125241 -0300
++++ b/src/game/rotk_lang.cpp	2026-11-07 15:26:18.019176548 -0300
 @@ -134,6 +134,11 @@
  
  X86_EXTERN_FUNC(__imp__sub_000F6DC0);
@@ -556,8 +709,8 @@ diff -ruN a/src/game/rotk_lang.cpp b/src/game/rotk_lang.cpp
  
  // void ShowSubtitle(uint32_t line), cdecl: a spoken line's subtitle; ours in its place when there is one
 diff -ruN a/src/game/rotk_prompts.cpp b/src/game/rotk_prompts.cpp
---- a/src/game/rotk_prompts.cpp	2026-11-07 14:14:11.551917555 -0300
-+++ b/src/game/rotk_prompts.cpp	2026-11-07 14:14:11.583984457 -0300
+--- a/src/game/rotk_prompts.cpp	2026-11-07 15:26:12.252125241 -0300
++++ b/src/game/rotk_prompts.cpp	2026-11-07 15:26:18.019312112 -0300
 @@ -35,19 +35,26 @@
  uint32_t g_button_pictures = 0;  // 0 auto, 1 xbox, 2 playstation, 3 nintendo, 4 keyboard
  

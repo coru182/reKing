@@ -57,7 +57,8 @@ players, sign in a second user on the PS5 (a guest is enough) and turn on their 
 - An in-game settings menu: resolution, frame rate, V-Sync, fps counter, texture filtering, sharper menus, field of
   view, draw distance, HUD placement, skippable videos, vibration, deadzones, damage, cheats
 - Every video can be skipped; the EA / New Line logos are skipped
-- Sharper menus at 4K: the menus' full-screen pictures redrawn four times larger, and all text with crisp edges
+- Sharper menus at 4K: the menus' full-screen pictures redrawn four times larger, all text with crisp edges, and the
+  HUD's and menus' small pictures redrawn four times larger
 - Two players, saves on the console
 - No logging while you play
 

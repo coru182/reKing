@@ -43,6 +43,10 @@ extern const uint64_t kXbeBlocks[];
 }  // namespace ps5
 namespace rotk {
 extern std::filesystem::path g_ini_file;  // the port's rotk_settings.cpp: ROTK PC's Data folder is beside it
+extern bool g_sharp_text;                 // the port's rotk_fonts.cpp: "Sharper text and menus"
+namespace ps5art {
+void SharpPictures();  // ps5/font_ps5.cpp: the HUD's and menus' small pictures redrawn larger
+}
 }
 
 extern "C" {
@@ -439,6 +443,7 @@ int main() {
     app::OverlayInit();
     input::Init();
     if (app::kGame.init) app::kGame.init();
+    if (rotk::g_sharp_text) rotk::ps5art::SharpPictures();
     // ROTK PC's Data folder, when the player put their copy's in /data/rotk/pc: sharper text reads its larger fonts
     // and menu pictures (rotk_fonts.cpp, rotk_menu_art.cpp look beside the PC game's ROTKFix.ini, which needn't exist)
     {

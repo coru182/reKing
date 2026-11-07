@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.0.5
+
+- **Sharper HUD and menu pictures.** The life bar, the portrait's frame and sword, the ring and the menus' frames and
+  leaf were small pictures stretched to 4K. Each one is now redrawn four times larger with sharpened edges the first
+  time it is shown.
+- **See-through and fading text is sharp too.** Text drawn translucent or fading in and out ("perfect mode!", "your
+  mission has failed") was skipped by 1.0.4's sharper text. It no longer is.
+
 ## 1.0.4
 
 - **Sharper text everywhere.** The title lettering that still looked low resolution is now drawn four times larger
