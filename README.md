@@ -112,18 +112,19 @@ python3 tools/mkart.py my-icon.jpg my-background.png art/                # optio
 
 ### Making a release on GitHub
 
-The **Build reKing** workflow (Actions tab) builds the app on GitHub's machines and puts it in a release.
+As with reUndr, players never need a `default.xbe`: they download the app from **Releases** and use their own
+`.iso`. Only whoever makes a release builds it from their own disc, once per version:
 
-1. Put your `default.xbe` somewhere with a private direct-download link (for example a Dropbox link ending in
-   `?dl=1`). Never commit it to the repository.
-2. In the repository's **Settings > Secrets and variables > Actions**, add the secret `XBE_URL` with that link.
-   Optionally add `XBE_SHA256` with the file's checksum (`sha256sum default.xbe`) so a wrong download is caught.
-   Secrets never appear in the logs, and workflows from forks don't get them.
-3. Set `VERSION` in `build-ps5.sh` (and `contentVersion` in `package/sce_sys/param.json`) for the new release.
-4. **Actions > Build reKing > Run workflow.** Tick "Publish the release" to publish it straight away as the latest
-   release; otherwise it is a draft that only you see until you publish it from **Releases**. A run takes roughly
-   half an hour, plus about 20 minutes when the PS5 toolchain isn't kept yet (the first run, or after a week
-   without runs, when GitHub drops it). "Only the PS5 toolchain" prepares that part without your `default.xbe`.
+1. Set `VERSION` in `build-ps5.sh` (and `contentVersion` in `package/sce_sys/param.json`), then build as above.
+2. On GitHub, **Releases > Draft a new release**: a tag such as `v1.0.2`, the title `reKing 1.0.2`, the text of
+   `.github/release-notes.md`, and attach `build-ps5/PPSA99063-<version>.zip`. **Publish release.**
+
+Or let GitHub build it: the **Build reKing** workflow (Actions tab) does both steps on GitHub's machines, from a
+`default.xbe` it downloads from the repository secret `XBE_URL` (a private direct-download link, for example a
+Dropbox link ending in `?dl=1`; optionally `XBE_SHA256` with its checksum). Secrets never appear in the logs, and
+workflows from forks don't get them. **Actions > Build reKing > Run workflow**; tick "Publish the release" to publish
+it straight away, otherwise it is a draft only you see. A run takes roughly half an hour, plus about 20 minutes when
+the PS5 toolchain isn't kept yet. "Only the PS5 toolchain" prepares that part without a `default.xbe`.
 
 ## How it fits together
 
