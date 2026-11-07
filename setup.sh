@@ -2,6 +2,7 @@
 # reKing setup: the pinned dependencies, then the game's code recompiled from your own default.xbe.
 #
 #   ./setup.sh /path/to/default.xbe        then ./build-ps5.sh
+#   ./setup.sh --toolchain                 only the dependencies and the PS5 toolchain (no default.xbe needed)
 #
 # deps/        Athelas 1.8.2 (the Return of the King port and its SDK), glslang 15.4.0, Dear ImGui 1.91.0, toml++
 #              3.4.0, and reUndr-ps5 with its PS5 toolchain (PayloadSDK, RADV built for the PS5, the packaging tool)
@@ -14,11 +15,14 @@ set -euo pipefail
 ROOT=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 DEPS=$ROOT/deps
 XBE=${1:-}
-if [ ! -f "$XBE" ]; then
-    echo "usage: ./setup.sh /path/to/default.xbe   (from your own disc of The Return of the King, US Xbox)"
-    exit 2
+if [ "$XBE" != --toolchain ]; then
+    if [ ! -f "$XBE" ]; then
+        echo "usage: ./setup.sh /path/to/default.xbe   (from your own disc of The Return of the King, US Xbox)"
+        echo "       ./setup.sh --toolchain            (the dependencies and the PS5 toolchain only)"
+        exit 2
+    fi
+    XBE=$(cd "$(dirname "$XBE")" && pwd)/$(basename "$XBE")
 fi
-XBE=$(cd "$(dirname "$XBE")" && pwd)/$(basename "$XBE")
 JOBS=${JOBS:-$(nproc)}
 export PATH=/usr/lib/llvm-18/bin:$PATH
 for tool in git cmake ninja clang-18 clang++-18 ld.lld llvm-objcopy-18 llvm-objdump-18 python3 patch zip; do
@@ -49,6 +53,10 @@ if [ ! -f "$VK/.deps/native/radv-release/lib/libvulkan_radeon.ps5.a" ] || [ ! -f
     (cd "$REUNDR" && python3 tools/rebuild-deps.py --llvm-bin /usr/lib/llvm-18/bin --jobs "$JOBS")
 fi
 [ -x "$REUNDR/build/ps5-native-tool" ] || (cd "$REUNDR" && python3 tools/build-native-tool.py)
+if [ "$XBE" = --toolchain ]; then
+    echo "setup: the toolchain is ready"
+    exit 0
+fi
 
 # the game's tree: Athelas's Return of the King port and its SDK, with this port's changes
 G=$ROOT/work/game

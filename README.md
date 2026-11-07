@@ -65,6 +65,22 @@ python3 tools/mkart.py my-icon.jpg my-background.png art/                # optio
 
 `art/` is left out of git; `build-ps5.sh` puts its `icon0.png`, `pic0.dds` and `pic1.dds` in the app.
 
+### Building on GitHub
+
+The **Build reKing** workflow (Actions tab) builds the app on GitHub's machines and puts it in a **draft release**,
+which only people with write access to the repository can see until you publish it.
+
+1. Put your `default.xbe` somewhere with a private direct-download link (for example a Dropbox link ending in
+   `?dl=1`). Never commit it to the repository.
+2. In the repository's **Settings > Secrets and variables > Actions**, add the secret `XBE_URL` with that link.
+   Optionally add `XBE_SHA256` with the file's checksum (`sha256sum default.xbe`) so a wrong download is caught.
+   Secrets never appear in the logs, and workflows from forks don't get them.
+3. **Actions > Build reKing > Run workflow.** The first run also builds the PS5 toolchain and keeps it for the next
+   runs (about two to three hours in all); after that a run takes about an hour. "Only the PS5 toolchain" prepares
+   that part without your `default.xbe`.
+4. The app is in **Releases**, as a draft named after the version in `build-ps5.sh`. Publishing it makes it public,
+   and the app contains code recompiled from the game.
+
 ## Installing and playing
 
 You need a PS5 that runs homebrew, with ShadowMountPlus (it registers apps in `/data/homebrew`) and an FTP server.
@@ -112,9 +128,50 @@ controller.
 - [glslang](https://github.com/KhronosGroup/glslang) 15.4.0 compiles the game's shaders at run time (from HLSL);
   Mesa keeps the compiled ones in `/data/rotk/shadercache`.
 
+## Credits
+
+Made by [coru182](https://github.com/coru182), with Claude (Anthropic). Built on the work of:
+
+- **The game:** EA Redwood Shores, who made The Return of the King, and Electronic Arts, who published it; Hypnos
+  Entertainment, who made its PC version (whose larger fonts and menu pictures the optional sharper text reads). And
+  J.R.R. Tolkien, and New Line Cinema's films, for the world it's set in.
+- **[Athelas](https://github.com/Shagg88/Athelas) by Shagg:** The Return of the King's Xbox port (its hooks,
+  settings, menus, sharper text, PlayStation button pictures and ROTK Fix compatibility) and the SDK this builds on.
+- **[XboxXBE-Recomp](https://github.com/TGP482/XboxXBE-Recomp) by TGP482:** the static recompiler and the Xbox
+  runtime (kernel, Direct3D 8 on Vulkan, DirectSound, XAPI).
+- **[XenonRecomp](https://github.com/hedge-dev/XenonRecomp) by hedge-dev:** the overridable function layout and
+  instruction hooks the recompiler follows; **[Zydis](https://github.com/zyantific/zydis) by zyantific:** the
+  disassembler it reads the game's code with.
+- **[reUndr-ps5](https://github.com/bystritskiy/reUndr-ps5) by bystritskiy:** the PS5 port this one is modelled on:
+  the pinned toolchain, the link recipe, the packaging tool and the parts of its PS5 host this one follows.
+- **[PS5_Vulkan](https://github.com/mihawk-99/PS5_Vulkan), [PS5_Mesa](https://github.com/mihawk-99/PS5_Mesa) and
+  [PS5_PayloadSDK](https://github.com/mihawk-99/PS5_PayloadSDK) by mihawk-99:** Vulkan on the PS5: Mesa's RADV with a
+  PS5 winsys and VideoOut, and the payload SDK's platform layer.
+- **[ps5-native-app-boilerplate](https://github.com/blackbearreloaded/ps5-native-app-boilerplate) by
+  BlackBearReloaded:** the ELF converter, the fake-signed SELF writer and the clean-room `libc.prx` (through
+  PS5_Vulkan).
+- **[ps5-payload-dev/sdk](https://github.com/ps5-payload-dev/sdk) by John Törnblom:** the public PS5 headers, sysroot
+  and toolchain.
+- **[Mesa](https://gitlab.freedesktop.org/mesa/mesa)** (RADV, ACO, NIR, with AMD's AddrLib) and
+  **[LLVM / Clang](https://github.com/llvm/llvm-project)**.
+- **[glslang](https://github.com/KhronosGroup/glslang)** and the Vulkan headers (Khronos Group),
+  **[Dear ImGui](https://github.com/ocornut/imgui)** (Omar Cornut), **[toml++](https://github.com/marzer/tomlplusplus)**
+  (Mark Gillard), **[stb](https://github.com/nothings/stb)** (Sean Barrett), **[zlib](https://zlib.net/)** (Jean-loup
+  Gailly and Mark Adler) and **Liberation Sans** (SIL Open Font License).
+- **On the console:** [ShadowMountPlus](https://github.com/drakmor/ShadowMountPlus) by drakmor,
+  [ftpsrv](https://github.com/ps5-payload-dev/ftpsrv) by ps5-payload-dev, and the PS5 homebrew scene whose jailbreak
+  and loaders run it.
+
 ## Licence
 
 This repository's own code is GPL-3.0 (`LICENSE`). Its patches change Athelas and XboxXBE-Recomp, which are MIT; the
 app you build also contains Dear ImGui, toml++, glslang, Mesa, and the PS5 toolchain, whose link recipe and platform
 library are GPL-3.0-or-later. `package/licenses/` has every licence and `package/licenses/NOTICE.txt` the details.
 The game, its assets and the code recompiled from it belong to their owners and are covered by none of this.
+
+## Legal notice
+
+This is an unofficial, non-commercial fan project, independent of the upstream authors and rights holders. The game and
+"The Lord of the Rings: The Return of the King" belong to their rights holders (Electronic Arts, New Line Cinema and
+the Tolkien licensors). Xbox is a trademark of Microsoft Corporation. PlayStation, PS5 and DualSense are trademarks of Sony Interactive Entertainment
+Inc. All other trademarks belong to their respective owners.

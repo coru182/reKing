@@ -86,8 +86,13 @@ if has link; then
     # whole, the payload SDK's libc++/libc++abi/libunwind, its system module stubs, one export map
     work=$OUT/link; mkdir -p "$work/obj" "$work/stubs"
     archive=$VK/.deps/native/radv-release/lib/libvulkan_radeon.ps5.a
-    resource=$(clang-18 --print-resource-dir); mkdir -p "$resource/lib/linux"
-    cp "$REUNDR/build/deps/compiler-rt/libclang_rt.builtins-x86_64.a" "$resource/lib/linux/"
+    # the recipe takes compiler-rt's builtins from clang's resource folder: reUndr's pinned copy goes there (with sudo
+    # when that folder belongs to root, as on a CI runner)
+    resource=$(clang-18 --print-resource-dir); rt="$REUNDR/build/deps/compiler-rt/libclang_rt.builtins-x86_64.a"
+    if ! cmp -s "$rt" "$resource/lib/linux/libclang_rt.builtins-x86_64.a"; then
+        { mkdir -p "$resource/lib/linux" && cp "$rt" "$resource/lib/linux/"; } 2>/dev/null ||
+            sudo sh -c "mkdir -p '$resource/lib/linux' && cp '$rt' '$resource/lib/linux/'"
+    fi
     for pair in 'libSceAgc agc_canary_link_stub.c' 'libSceAgcDriver agc_driver_canary_link_stub.c'; do
         read -r library source <<<"$pair"
         "$SDK/bin/prospero-clang" -std=c11 -O2 -fPIC -c "$VK/vendor/ps5/sdk/stubs/$source" -o "$work/obj/$library.o"

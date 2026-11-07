@@ -1,0 +1,114 @@
+# Builds the app on GitHub and puts it in a draft release (README.md, "Building on GitHub").
+# The game's default.xbe comes from the repository secret XBE_URL (a private direct-download link), never from the
+# repository; it and the code recompiled from it are never cached or uploaded anywhere but the draft release. Only the
+# PS5 toolchain, which holds nothing from the game, is cached between runs.
+name: Build reKing
+
+on:
+  workflow_dispatch:
+    inputs:
+      toolchain_only:
+        description: Only the PS5 toolchain (prepares it for later runs; no default.xbe needed)
+        type: boolean
+        default: false
+      draft_release:
+        description: Put the app in a draft release (public only once you publish it)
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: build-reking
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Free disk space
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+
+      - name: Install build tools
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ninja-build cmake clang-18 lld-18 llvm-18 llvm-18-dev zlib1g-dev patch zip
+          echo "JOBS=$(nproc)" >> "$GITHUB_ENV"
+
+      - name: Toolchain version
+        id: pin
+        run: echo "reundr=$(sed -n 's#.*reUndr-ps5.git \([0-9a-f]*\).*#\1#p' setup.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Restore the PS5 toolchain
+        id: toolchain
+        uses: actions/cache/restore@v4
+        with:
+          path: deps/reUndr-ps5
+          key: ps5-toolchain-${{ steps.pin.outputs.reundr }}-v1
+
+      - name: Build the PS5 toolchain (reUndr-ps5's pinned build, the first time only)
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        run: ./setup.sh --toolchain
+
+      - name: Keep the PS5 toolchain for later runs
+        if: steps.toolchain.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v4
+        with:
+          path: deps/reUndr-ps5
+          key: ${{ steps.toolchain.outputs.cache-primary-key }}
+
+      - name: Get default.xbe
+        if: ${{ !inputs.toolchain_only }}
+        env:
+          XBE_URL: ${{ secrets.XBE_URL }}
+          XBE_SHA256: ${{ secrets.XBE_SHA256 }}
+        run: |
+          if [ -z "$XBE_URL" ]; then
+            echo "::error::Add the repository secret XBE_URL: a direct download link to your default.xbe (README.md, Building on GitHub)"
+            exit 1
+          fi
+          mkdir -p "$RUNNER_TEMP/xbe"
+          curl -fsSL --retry 3 -o "$RUNNER_TEMP/xbe/default.xbe" "$XBE_URL"
+          if [ "$(head -c 4 "$RUNNER_TEMP/xbe/default.xbe")" != XBEH ]; then
+            echo "::error::The download is not an XBE: XBE_URL must be a direct download link (a Dropbox link ends in ?dl=1)"
+            exit 1
+          fi
+          if [ -n "$XBE_SHA256" ] && ! echo "$XBE_SHA256  $RUNNER_TEMP/xbe/default.xbe" | sha256sum --check --status; then
+            echo "::error::default.xbe doesn't match the XBE_SHA256 secret"
+            exit 1
+          fi
+
+      - name: Recompile the game's code from default.xbe
+        if: ${{ !inputs.toolchain_only }}
+        run: ./setup.sh "$RUNNER_TEMP/xbe/default.xbe"
+
+      - name: Build the app
+        if: ${{ !inputs.toolchain_only }}
+        run: ./build-ps5.sh
+
+      - name: Draft release
+        if: ${{ !inputs.toolchain_only && inputs.draft_release }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          version=$(sed -n 's/^VERSION=//p' build-ps5.sh)
+          zip=build-ps5/PPSA99063-$version.zip
+          if gh release view "v$version" > /dev/null 2>&1; then
+            gh release upload "v$version" "$zip" --clobber
+            echo "The app replaced the one in release v$version"
+          else
+            gh release create "v$version" "$zip" --draft --target "$GITHUB_SHA" --title "reKing $version" \
+              --notes-file .github/release-notes.md
+            echo "Draft release v$version made: publish it from the Releases page when you want it public"
+          fi
+
+      - name: Remove default.xbe and everything made from it
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/xbe" work build-ps5

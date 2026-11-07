@@ -10,7 +10,9 @@ What is in the app, and under which terms
   and the port: GPL-3.0 (reKing-GPL-3.0.txt). Parts follow reUndr's PS5 host by bystritskiy (MIT, reUndr-MIT.txt).
 - The Return of the King Xbox port from Athelas by Shagg (MIT, Athelas-MIT.txt).
 - XboxXBE-Recomp by TGP482, the recompiler and runtime (MIT, XboxXBE-Recomp-MIT.txt).
-- Dear ImGui (MIT), toml++ (MIT), stb (public domain / MIT), the Khronos Vulkan headers (Apache-2.0 / MIT),
+- Liberation Sans, the menu's font and the button pictures' letters (SIL Open Font License 1.1,
+  LiberationSans-OFL.txt).
+- Dear ImGui (MIT), toml++ (MIT), stb (public domain / MIT, stb-LICENSE.txt), the Khronos Vulkan headers (Apache-2.0 / MIT),
   and glslang 15.4.0 (BSD / MIT / Apache-2.0, glslang.txt).
 - RADV from Mesa (MIT and others, Mesa-license.rst), built with PS5_Vulkan's recipe, which with its native link
   recipe and the PS5 Platform library from the PS5_PayloadSDK fork is GPL-3.0-or-later (PS5_Vulkan-LICENSE.txt,
