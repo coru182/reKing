@@ -68,9 +68,14 @@ if has compile; then
         "$OUT/xbe_blocks" "$GAME/assets/default.xbe" "$OUT/host/xbe_blocks.cpp"
     fi
     SRC="$SRC $OUT/host/xbe_blocks.cpp"
-    # the help screen's PlayStation controller (ps5/controller_ps5.cpp), built into the program
-    if [ ! "$OUT/host/controller_png.cpp" -nt "$ROOT/ps5/art/controller.png" ]; then
-        python3 - "$ROOT/ps5/art/controller.png" "$OUT/host/controller_png.cpp" <<'PY'
+    # the help screen's PlayStation controller (ps5/controller_ps5.cpp), built into the program: art/controller.png
+    # when there is one (tools/mkcontroller.py --image), else the drawing
+    pad=$ROOT/ps5/art/controller.png
+    [ -f "$ROOT/art/controller.png" ] && pad=$ROOT/art/controller.png
+    if [ ! "$OUT/host/controller_png.cpp" -nt "$pad" ] || [ "$(cat "$OUT/host/controller_png.from" 2>/dev/null)" != "$pad" ]; then
+        echo "$pad" > "$OUT/host/controller_png.from"
+        echo "compile: the help screen's controller from ${pad#$ROOT/}"
+        python3 - "$pad" "$OUT/host/controller_png.cpp" <<'PY'
 import sys
 data = open(sys.argv[1], 'rb').read()
 with open(sys.argv[2], 'w') as o:

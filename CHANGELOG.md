@@ -2,9 +2,8 @@
 
 ## 1.0.3
 
-- The help screen shown while a level loads (after character select) has a PlayStation-layout controller where it
-  had the Xbox controller. The drawing is reKing's own, placed so the game's L2 / R2 and button labels still point at
-  the right buttons.
+- The help screen shown while a level loads (after character select) has a PlayStation controller where it had the
+  Xbox controller, placed so the game's L2 / R2 and button labels still point at the right buttons.
 
 ## 1.0.2
 

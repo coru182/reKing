@@ -70,8 +70,8 @@ PlayStation buttons
 -------------------
 The game shows PlayStation buttons: in the hints during play, in the menus' help bar (character select's "Help",
 stage select's "Level Info"), "Press OPTIONS", and the save and load messages say PS5 where they said Xbox.
-The help screen shown while a level loads (after character select) has a PlayStation-layout controller instead of
-the Xbox one: a drawing of reKing's own, placed so the game's labels still point at the right buttons.
+The help screen shown while a level loads (after character select) has a PlayStation controller instead of the Xbox
+one, placed so the game's labels still point at the right buttons.
 
 Settings file
 -------------

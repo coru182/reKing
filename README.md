@@ -108,6 +108,14 @@ python3 tools/mkart.py my-icon.jpg my-background.png art/                # optio
 
 `art/` is left out of git; `build-ps5.sh` puts its `icon0.png`, `pic0.dds` and `pic1.dds` in the app.
 
+The loading help screen's controller can be your own picture too: a front view of a controller on a white or
+transparent background, cut out and placed where the Xbox one was, with the same teal glow.
+
+```sh
+python3 tools/mkcontroller.py --image my-controller.png     # writes art/controller.png; --preview screen.png to look
+./build-ps5.sh
+```
+
 ### Making a release on GitHub
 
 As with reUndr, players never need a `default.xbe`: they download the app from **Releases** and use their own
