@@ -31,7 +31,7 @@ Tolkien Estate, Microsoft or Sony Interactive Entertainment.
 You need a Linux machine (WSL 2 with Ubuntu 24.04 works) with:
 
 ```sh
-sudo apt install git cmake ninja-build clang-18 lld-18 llvm-18 python3 python3-pip patch zip
+sudo apt install git cmake ninja-build clang-18 lld-18 llvm-18 llvm-18-dev zlib1g-dev python3 python3-pip patch zip
 ```
 
 and Docker, for reUndr-ps5's PS5 toolchain. You also need `default.xbe` from your own disc image of the **US**

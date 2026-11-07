@@ -52,7 +52,14 @@ if [ ! -f "$VK/.deps/native/radv-release/lib/libvulkan_radeon.ps5.a" ] || [ ! -f
     command -v docker >/dev/null || { echo "setup: building reUndr-ps5's toolchain needs Docker"; exit 1; }
     (cd "$REUNDR" && python3 tools/rebuild-deps.py --llvm-bin /usr/lib/llvm-18/bin --jobs "$JOBS")
 fi
-[ -x "$REUNDR/build/ps5-native-tool" ] || (cd "$REUNDR" && python3 tools/build-native-tool.py)
+if [ ! -x "$REUNDR/build/ps5-native-tool" ]; then
+    # reUndr's script names macOS's Homebrew clang: the same script, with this machine's clang++-18 (build/ sits
+    # beside tools/, so it finds its files the same way)
+    mkdir -p "$REUNDR/build"
+    sed "s#/opt/homebrew/opt/llvm@18/bin/clang++#$(command -v clang++-18)#" "$REUNDR/tools/build-native-tool.py" \
+        > "$REUNDR/build/build-native-tool-linux.py"
+    (cd "$REUNDR" && python3 build/build-native-tool-linux.py)
+fi
 if [ "$XBE" = --toolchain ]; then
     echo "setup: the toolchain is ready"
     exit 0
