@@ -22,13 +22,17 @@ apps in `/data/homebrew`) and an FTP server.
 1. **The app.** Download `PPSA99063-<version>.zip` from [Releases](../../releases/latest), unpack it, and copy the
    `PPSA99063` folder to `/data/homebrew/` on the console. The **reKing** tile appears on the home screen.
 2. **Your disc.** Copy your disc image (`.iso`) of The Return of the King, **US Xbox release**, to `/data/rotk/` on
-   the console (create the folder), or to a `rotk` folder on a USB drive. A full dump and a trimmed one, clean or
-   media-patched, all work. The app reads the image as it is: nothing is unpacked.
-3. **Play.** Start the tile.
+   the console (create the folder), or to a `rotk` folder (or the top) of a USB drive. A full dump and a trimmed one,
+   clean or media-patched, all work.
+3. **Play.** Start the tile. The first start unpacks the disc image into `/data/rotk/game/`, with a progress screen,
+   and then the game starts. From then on it starts straight from that folder, and **you can delete the `.iso`**.
 
-If the disc image is missing or is another release, the app says so on screen.
+Already have the disc's files (`default.xbe` and the `Data` folder)? Copy them to `/data/rotk/game/` instead. If the
+console has no room to unpack the image, the app plays from the `.iso` directly and says so. If the game is missing,
+damaged, or another game or release, a screen says so (press Cross to close it).
 
-**To update,** copy the new `PPSA99063` folder over the old one. Your saves and settings in `/data/rotk/` are kept.
+**To update,** copy the new `PPSA99063` folder over the old one. Your saves, settings and the game's files in
+`/data/rotk/` are kept.
 
 ## Controls
 
@@ -131,9 +135,9 @@ The **Build reKing** workflow (Actions tab) builds the app on GitHub's machines 
   surface on VideoOut, a logging switch, and the PlayStation wording and button pictures.
   `patches/media-patched-xbe.patch` leaves out the disc check's hook for a media-patched `default.xbe` (setup.sh
   decides).
-- `ps5/`: the PS5 host: the entry point and disc image, the app shell and settings, DualSense input (libScePad),
-  sound (sceAudioOut), the in-game menu (Dear ImGui), the PS5 wording of the game's text, and POSIX calls the PS5
-  doesn't allow from an app.
+- `ps5/`: the PS5 host: the entry point, the first start (the disc image unpacked, its screens), the app shell and
+  settings, DualSense input (libScePad), sound (sceAudioOut), the in-game menu (Dear ImGui), the PS5 wording of the
+  game's text, and POSIX calls the PS5 doesn't allow from an app.
 - [reUndr-ps5](https://github.com/bystritskiy/reUndr-ps5) by bystritskiy: the pinned PS5 toolchain (mihawk-99's
   PS5_PayloadSDK and PS5_Vulkan with Mesa RADV), its link recipe and packaging tool, and the parts of its PS5 host
   this one follows.
@@ -155,7 +159,8 @@ Made by [coru182](https://github.com/coru182), with Claude (Anthropic). Built on
   instruction hooks the recompiler follows; **[Zydis](https://github.com/zyantific/zydis) by zyantific:** the
   disassembler it reads the game's code with.
 - **[reUndr-ps5](https://github.com/bystritskiy/reUndr-ps5) by bystritskiy:** the PS5 port this one is modelled on:
-  the pinned toolchain, the link recipe, the packaging tool and the parts of its PS5 host this one follows.
+  the pinned toolchain, the link recipe, the packaging tool, the parts of its PS5 host this one follows, and the
+  first start's disc image unpacking and progress screen (adapted from its `disc_image.c` and `screen_ps5.c`).
 - **[PS5_Vulkan](https://github.com/mihawk-99/PS5_Vulkan), [PS5_Mesa](https://github.com/mihawk-99/PS5_Mesa) and
   [PS5_PayloadSDK](https://github.com/mihawk-99/PS5_PayloadSDK) by mihawk-99:** Vulkan on the PS5: Mesa's RADV with a
   PS5 winsys and VideoOut, and the payload SDK's platform layer.

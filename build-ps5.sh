@@ -17,7 +17,7 @@ VK=$REUNDR/build/deps/PS5_Vulkan
 SDK=$VK/.deps/native/ps5-payload-sdk
 OUT=$ROOT/build-ps5
 TITLE=PPSA99063
-VERSION=1.0.1
+VERSION=1.0.2
 JOBS=${JOBS:-$(nproc)}
 export PATH=/usr/lib/llvm-18/bin:$PATH
 CXX="$SDK/bin/prospero-clang++"
@@ -82,7 +82,7 @@ if has compile; then
     [ $fails -eq 0 ] || { echo "$fails host sources failed"; exit 1; }
     for f in "$ROOT"/ps5/*.c; do
         o=$OUT/host/$(echo "${f#$ROOT/}" | tr / _ | sed 's/\.c$/.o/')
-        [ "$o" -nt "$f" ] || "$SDK/bin/prospero-clang" -std=c11 -O2 -ffunction-sections -fdata-sections -fno-plt -c "$f" -o "$o"
+        [ "$o" -nt "$f" ] || "$SDK/bin/prospero-clang" -std=c11 -O2 -ffunction-sections -fdata-sections -fno-plt -I"$ROOT" -c "$f" -o "$o" || exit 1
     done
     echo "compile: done"
 fi

@@ -1,4 +1,4 @@
-reKing 1.0.1 - The Return of the King (US Xbox), recompiled for the PS5
+reKing 1.0.2 - The Return of the King (US Xbox), recompiled for the PS5
 =======================================================================
 
 An unofficial fan port: the original Xbox game's code, statically recompiled into a native PS5 app. Not an emulator.
@@ -9,7 +9,8 @@ What you need
 - A PS5 that runs homebrew, with ShadowMountPlus (it registers apps in /data/homebrew) and an FTP server.
 - Your own disc image (.iso) of The Return of the King, US Xbox release (title EA-062). A full dump and a trimmed
   one, clean or media-patched, all work.
-- About 2.5 GB free on the console, or a USB drive for the disc image.
+- Room on the console for the game's files (about as much as a trimmed disc image), and for the disc image itself
+  until the first start has unpacked it (or put the image on a USB drive).
 
 Install
 -------
@@ -17,10 +18,20 @@ Install
 2. Over FTP, copy the whole PPSA99063 folder to /data/homebrew/ on the PS5.
    ShadowMountPlus adds a "reKing" tile to the home screen (give it about 30 seconds).
 3. Over FTP, create the folder /data/rotk/ and copy your disc image into it, e.g. /data/rotk/rotk.iso.
-   Or put it on a USB drive in a folder named rotk (for example rotk/rotk.iso at the top of the drive).
-   The game reads the image directly: nothing is unpacked, and you keep the .iso there.
+   Or put it on a USB drive, in a folder named rotk or at the top of the drive.
+4. Start the reKing tile. The first start unpacks the disc image into /data/rotk/game/ (a screen shows how far it
+   is; it takes a few minutes, longer from a USB drive), then the game starts. From then on the game starts from
+   that folder straight away, and you can delete the .iso.
 
-To update, copy the new PPSA99063 folder over the old one. Your saves and settings in /data/rotk/ are kept.
+Already have the disc's files (default.xbe and the Data folder)? Copy them to /data/rotk/game/ instead of an .iso,
+or to rotk/game/ on a USB drive. If there isn't room to unpack the image, the game reads the .iso directly (a
+notification says so) and you keep the .iso there.
+
+If something is wrong, a screen says what (game not found, a damaged image, another game or another release of it);
+press Cross to close it.
+
+To update, copy the new PPSA99063 folder over the old one. Your saves, settings and the game's files in /data/rotk/
+are kept.
 
 Play
 ----
@@ -78,7 +89,8 @@ Some settings in the file are for the PC (window, keyboard, Discord, upscalers) 
 Where things are
 ----------------
 /data/homebrew/PPSA99063/   the app
-/data/rotk/                 your disc image, settings.toml
+/data/rotk/                 your disc image (until it is unpacked), settings.toml
+/data/rotk/game/            the game's files, unpacked from the disc image at the first start
 /data/rotk/pc/Data/         optional: the PC version's Data folder (sharper text)
 /data/rotk/hdd/             saves
 /data/rotk/logs/            the logs, only while /data/rotk/logging-on exists (see below)
@@ -92,5 +104,6 @@ include the newest of both. Delete logging-on again afterwards. Never share game
 
 Credits
 -------
-The Return of the King Xbox PC port from Athelas (Shagg), XboxXBE-Recomp (TGP482), reUndr's PS5 host (bystritskiy),
+The Return of the King Xbox PC port from Athelas (Shagg), XboxXBE-Recomp (TGP482), reUndr's PS5 host, its first-start
+unpacking and screen (bystritskiy),
 PS5_Vulkan / PS5_Mesa / PS5_PayloadSDK (mihawk-99), Mesa RADV, Dear ImGui, glslang. Licences are in licenses/.

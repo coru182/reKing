@@ -7,7 +7,9 @@ from the player's own disc image. The game's program in it is recompiled from th
 What is in the app, and under which terms
 
 - reKing's own code, the PS5 host (ps5/: app shell, entry, input, audio, guest memory) and its changes to the SDK
-  and the port: GPL-3.0 (reKing-GPL-3.0.txt). Parts follow reUndr's PS5 host by bystritskiy (MIT, reUndr-MIT.txt).
+  and the port: GPL-3.0 (reKing-GPL-3.0.txt). Parts follow reUndr's PS5 host by bystritskiy (MIT, reUndr-MIT.txt),
+  and the first start's disc image unpacking and its screen (ps5/disc_image.c, ps5/screen_ps5.c) are adapted from
+  reUndr's (MIT, reUndr-MIT.txt).
 - The Return of the King Xbox port from Athelas by Shagg (MIT, Athelas-MIT.txt).
 - XboxXBE-Recomp by TGP482, the recompiler and runtime (MIT, XboxXBE-Recomp-MIT.txt).
 - Liberation Sans, the menu's font and the button pictures' letters (SIL Open Font License 1.1,
