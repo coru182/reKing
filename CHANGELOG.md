@@ -2,12 +2,17 @@
 
 ## 1.0.3
 
-- The help screen shown while a level loads (after character select) has a PlayStation controller where it had the
-  Xbox controller, placed so the game's L2 / R2 and button labels still point at the right buttons.
+- **A PS5 controller on the loading screen.** The help screen shown while a level loads (after character select)
+  showed the Xbox controller. It now shows a PS5 controller in the same place, with the same teal glow. The game's
+  L2 / R2 labels and arrows still point at the right buttons.
+- This works whether "Sharper text and menus" is on or off.
+- For builders: `tools/mkcontroller.py --image` turns any front-view picture of a controller into that screen's
+  picture (`art/controller.png`, which `build-ps5.sh` then builds in). Without one, the build uses the drawing in
+  `ps5/art/`.
+
+1.0.3 also includes everything in 1.0.2.
 
 ## 1.0.2
-
-**New in 1.0.2**
 
 - **The first start installs the game, as reUndr does.** It unpacks your disc image into `/data/rotk/game/`, with a
   progress screen, and then the game starts. From then on the game starts straight away, and you can delete the
@@ -20,7 +25,7 @@
 - Disc images are also found at the top of a USB drive. Files you unpacked yourself can go in `/data/rotk/game/` or
   in `rotk/game/` on a USB drive.
 
-**1.0.1**
+## 1.0.1
 
 - One build runs every US dump: full or trimmed, clean or media-patched. The release check now compares the game's
   code block by block, where it used to need the exact same bytes.
@@ -28,14 +33,14 @@
 - Releases come as a ready `PPSA99063` folder to download. A GitHub Actions workflow can build them too.
 - The tile has an original crown icon. You can build your own home screen art in with `tools/mkart.py`.
 
-**1.0.0**
+## 1.0.0
 
 - Nothing is logged while you play: no log line is formatted or written. To report a problem, create an empty
   `/data/rotk/logging-on` file and the logs come back.
 - The save and load messages say PS5 where they said Xbox.
 - The picture-capture tool from the test builds is gone.
 
-**Test builds 0.1.0 to 0.1.6**
+## Test builds 0.1.0 to 0.1.6
 
 - **0.1.0:** the first build. The US Xbox game's code was statically recompiled into a native PS5 app, with no
   emulator. It drew through Vulkan (Mesa RADV) at up to 4K, played with DualSense controllers and saved on the
@@ -62,7 +67,7 @@
   - The picture goes to VideoOut through Vulkan's display support.
   - L2 and R2 are named in the game's text.
 
-**Thanks to:**
+## Thanks to
 
 - Athelas by Shagg, the Return of the King Xbox port this one is built on
 - XboxXBE-Recomp by TGP482
