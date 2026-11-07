@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.4
+
+- **Sharper text everywhere.** The title lettering that still looked low resolution is now drawn four times larger
+  with crisp edges: the in-game dialogs ("are you sure?", "exit to menu", "your mission has failed") and messages
+  such as "perfect mode!". So is any other text the PC version's fonts don't cover, and, without the PC version's
+  Data folder, all of the game's text.
+
 ## 1.0.3
 
 - **A PS5 controller on the loading screen.** The help screen shown while a level loads (after character select)

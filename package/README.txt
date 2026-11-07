@@ -1,4 +1,4 @@
-reKing 1.0.3 - The Return of the King (US Xbox), recompiled for the PS5
+reKing 1.0.4 - The Return of the King (US Xbox), recompiled for the PS5
 =======================================================================
 
 An unofficial fan port: the original Xbox game's code, statically recompiled into a native PS5 app. Not an emulator.
@@ -60,8 +60,9 @@ Changes apply at once and are saved when you close the menu, except those marked
 
 Sharper text and menus (on by default)
 --------------------------------------
-The title, main menu, save and options screens' pictures are upscaled four times for a 4K screen.
-The game's text can be redrawn from the PC version's larger fonts too, if you own The Return of the King for PC
+The title, main menu, save and options screens' pictures are upscaled four times for a 4K screen, and the game's
+text is drawn four times larger with crisp edges (the dialogs' titles too).
+The text can be redrawn from the PC version's own larger fonts instead, if you own The Return of the King for PC
 (2003): copy that game's Data folder to /data/rotk/pc/Data/ on the PS5 (the files used are
 Data/Game/GlobScen.scw and Data/Game/fro/fro03.scw, so those two are enough). The title and main menu then use the
 PC game's larger pictures as well. Nothing from it is copied into the app; it is read from that folder at start.

@@ -461,19 +461,44 @@ diff -ruN a/sdk/runtime/kernel/threads.cpp b/sdk/runtime/kernel/threads.cpp
      cpu_set_t set;
      CPU_ZERO(&set);
 diff -ruN a/src/game/rotk_fonts.cpp b/src/game/rotk_fonts.cpp
---- a/src/game/rotk_fonts.cpp	2026-11-07 16:26:10.123433703 -0300
-+++ b/src/game/rotk_fonts.cpp	2026-11-07 16:26:10.129910168 -0300
-@@ -46,6 +46,9 @@
+--- a/src/game/rotk_fonts.cpp	2026-11-07 17:00:03.070590525 -0300
++++ b/src/game/rotk_fonts.cpp	2026-11-07 17:00:03.072797222 -0300
+@@ -46,6 +46,12 @@
  extern std::filesystem::path g_ini_file;  // rotk_settings.cpp: the ROTKFix.ini given, empty without one
  void PrepareMenuArt();                                                       // rotk_menu_art.cpp
  bool ReplaceMenuArt(const gpu::pack::Contents& t, gpu::pack::Image& out);  // rotk_menu_art.cpp
 +namespace ps5art {
 +bool Controller(const gpu::pack::Contents& t, gpu::pack::Image& out);  // PS5: port/ps5/controller_ps5.cpp
++// PS5 (port/ps5/font_ps5.cpp): an atlas made larger with crisp edges, and a font atlas no PC font covers made so
++std::vector<float> Crisp(const uint8_t* cov, uint32_t w, uint32_t h, uint32_t k);
++bool FontTexture(const gpu::pack::Contents& t, gpu::pack::Image& out);
 +}
  
  namespace {
  constexpr uint32_t kScale = 4;  // the replacement atlas's size over the Xbox one
-@@ -245,6 +248,7 @@
+@@ -181,15 +187,12 @@
+         if (unlike[i] <= std::max(best * 2.0f, best + 0.04f) && (!src || pc[i].line > src->line)) src = &pc[i];
+     uint32_t W = s.tex_w * kScale, H = s.tex_h * kScale;
+     s.cov.assign(size_t(W) * H, 0.0f);
+-    // the Xbox atlas, scaled up: what stays for glyphs the PC font lacks
+-    for (uint32_t y = 0; y < xb.h * kScale; y++)
+-        for (uint32_t x = 0; x < xb.w * kScale; x++) {
+-            float fx = (x + 0.5f) / kScale - 0.5f, fy = (y + 0.5f) / kScale - 0.5f;
+-            int x0 = std::clamp(int(std::floor(fx)), 0, int(xb.w) - 1), y0 = std::clamp(int(std::floor(fy)), 0, int(xb.h) - 1);
+-            int x1 = std::min(x0 + 1, int(xb.w) - 1), y1 = std::min(y0 + 1, int(xb.h) - 1);
+-            float ax = std::clamp(fx - x0, 0.0f, 1.0f), ay = std::clamp(fy - y0, 0.0f, 1.0f);
+-            s.cov[size_t(y) * W + x] = (xb.At(x0, y0) * (1 - ax) + xb.At(x1, y0) * ax) * (1 - ay) + (xb.At(x0, y1) * (1 - ax) + xb.At(x1, y1) * ax) * ay;
+-        }
++    // the Xbox atlas, scaled up: what stays for glyphs the PC font lacks (PS5: with crisp edges, port/ps5/font_ps5.cpp)
++    {
++        std::vector<float> up = ps5art::Crisp(xb.px.data(), xb.w, xb.h, kScale);
++        for (uint32_t y = 0; y < xb.h * kScale; y++)
++            std::memcpy(&s.cov[size_t(y) * W], &up[size_t(y) * xb.w * kScale], size_t(xb.w) * kScale * sizeof(float));
++    }
+     if (!src) return s;
+     s.pc_line = src->line;
+     for (const auto& [code, g] : xb.glyphs) {
+@@ -245,11 +248,12 @@
  std::shared_future<std::vector<Sharp>> g_prepared;
  
  bool Replace(const gpu::pack::Contents& t, gpu::pack::Image& out) {
@@ -481,7 +506,20 @@ diff -ruN a/src/game/rotk_fonts.cpp b/src/game/rotk_fonts.cpp
      if (!t.data || !g_prepared.valid() || (t.format != 0x0B && t.format != 0x24)) return false;
      const std::vector<Sharp>& fonts = g_prepared.get();
      if (t.format == 0x24) return ReplaceMenuArt(t, out);  // YUY2: the menu pictures
-@@ -293,8 +297,7 @@
+-    if (t.levels != 1) return false;                       // P8 fonts, one level
+     for (const Sharp& s : fonts) {
++        if (t.levels != 1) break;  // P8 fonts, one level
+         if (s.tex_w != t.width || s.tex_h != t.height || t.size < size_t(t.width) * t.height) continue;
+         uint64_t sum = 0;
+         for (size_t i = 0; i < size_t(t.width) * t.height; i++) sum += t.data[i];
+@@ -287,14 +291,13 @@
+         LOGR("rotk: sharp text: the %d pixel font drawn from ROTK PC's", s.line);
+         return true;
+     }
+-    return false;
++    return ps5art::FontTexture(t, out);  // PS5: any other font, sharp from its own atlas (port/ps5/font_ps5.cpp)
+ }
+ }  // namespace
  
  // GameInfo::loaded (rotk_movies.cpp Loaded): the fonts are prepared on a thread of their own
  void InitFonts() {
