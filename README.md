@@ -1,35 +1,96 @@
-# reKing
+<p align="center">
+  <img src="docs/media/banner.jpg" alt="reKing" width="100%">
+</p>
 
-**The Lord of the Rings: The Return of the King (US Xbox), statically recompiled into a native PS5 app.**
+<p align="center">
+  <b>The Lord of the Rings: The Return of the King, the original Xbox version, statically recompiled<br>
+  into a native app for homebrew-enabled PS5 consoles.</b>
+</p>
 
-The original Xbox game's code is translated to C++ and compiled for the PS5, like
-[reUndr](https://github.com/bystritskiy/reUndr-ps5) does for Need for Speed: Underground. It's not an emulator: it
-draws through Vulkan (Mesa's RADV) at up to 4K and 60 fps, and plays with DualSense controllers.
+<p align="center">
+  <a href="../../releases/latest"><img src="https://img.shields.io/github/v/release/coru182/reKing?label=download&style=for-the-badge&color=c99a43" alt="Download the latest release"></a>
+  <a href="CHANGELOG.md"><img src="https://img.shields.io/badge/changelog-what's%20new-3a2e1c?style=for-the-badge" alt="Changelog"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/licence-GPL--3.0-3a2e1c?style=for-the-badge" alt="GPL-3.0"></a>
+</p>
+
+<p align="center">
+  <a href="#install"><b>Install</b></a>
+  &nbsp;·&nbsp;
+  <a href="#controls">Controls</a>
+  &nbsp;·&nbsp;
+  <a href="#settings">Settings</a>
+  &nbsp;·&nbsp;
+  <a href="#reporting-a-problem">Report a problem</a>
+  &nbsp;·&nbsp;
+  <a href="#for-developers">Build it yourself</a>
+</p>
 
 > [!IMPORTANT]
-> **Bring your own game.** The app is the game's program recompiled for the PS5; it contains none of the game's
-> files. Its graphics, sound, videos and levels come from your own disc image of the US Xbox release, which you copy
-> to the console. Please don't ask for or share disc images here.
+> **Bring your own game.**
+> The app is the game's program recompiled for the PS5. It contains none of the game's files: the graphics, sound,
+> videos and levels come from your own disc image of the US Xbox release. Please don't ask for or share disc images
+> here.
 
-An unofficial fan project, not affiliated with or endorsed by Electronic Arts, New Line Cinema, Warner Bros., the
-Tolkien Estate, Microsoft or Sony Interactive Entertainment.
+> [!CAUTION]
+> **We do not support piracy.**
+> Please don't use this project with pirated copies of the game.
+
+<p align="center">
+  <img src="docs/media/level.jpg" alt="A hobbit level: a ruined stone hall, orcs, and the HUD with the portrait, the life bar and the ring" width="100%">
+  <br>
+  <sub>Captured on a PS5 at 3840x2160.</sub>
+</p>
+
+## What it is
+
+The Xbox game's code is translated into C++ ahead of time and compiled for the PS5, as
+[reUndr](https://github.com/bystritskiy/reUndr-ps5) does for Need for Speed: Underground. It's not an emulator: a
+replacement runtime handles the original console's graphics (Direct3D 8 on Vulkan, through Mesa's RADV), sound,
+input and system services.
+
+## Highlights
+
+- **Native 4K.** Rendered at 1080p, 1620p or 4K and output at 3840x2160, at 30 or 60 fps.
+- **HD text.** Every font is redrawn four times larger with crisp edges, the dialogs' titles too. With the PC
+  version's files, from its own larger fonts.
+- **Sharper pictures.** The menus' full-screen pictures, the HUD (the portrait, the life bar, the ring) and the menus'
+  frames are redrawn four times larger.
+- **DualSense throughout.** Cross, Circle, Square and Triangle in the hints and menus, "Press OPTIONS", L2 / R2,
+  PS5 in the save messages, and a PlayStation controller on the loading screens.
+- **An in-game menu.** L3 + R3 at any time: picture, frame rate, field of view, draw distance, HUD placement,
+  vibration, deadzones, damage and the game's cheats.
+- **Skippable videos.** Every video can be skipped, and the EA and New Line logos are.
+- **Two players.** Sign in a second user (a guest is enough) and play co-op on one console.
+- **Disc image install.** Copy your `.iso` to the console and start the app: it does the rest.
+
+## Requirements
+
+- A PS5 that runs homebrew, with [ShadowMountPlus](https://github.com/drakmor/ShadowMountPlus) (it registers apps in
+  `/data/homebrew`) and an FTP server.
+- Your own disc image (`.iso`) of The Return of the King, **US Xbox release** (title EA-062). A full dump and a
+  trimmed one, clean or media-patched, all work.
+- About 2.2 GB free on the console for the game's files, plus the disc image until the first start has unpacked it
+  (or keep the image on a USB drive).
 
 ## Install
 
-You need a PS5 that runs homebrew, with [ShadowMountPlus](https://github.com/drakmor/ShadowMountPlus) (it registers
-apps in `/data/homebrew`) and an FTP server.
-
 1. **The app.** Download `PPSA99063-<version>.zip` from [Releases](../../releases/latest), unpack it, and copy the
-   `PPSA99063` folder to `/data/homebrew/` on the console. The **reKing** tile appears on the home screen.
-2. **Your disc.** Copy your disc image (`.iso`) of The Return of the King, **US Xbox release**, to `/data/rotk/` on
-   the console (create the folder), or to a `rotk` folder (or the top) of a USB drive. A full dump and a trimmed one,
-   clean or media-patched, all work.
-3. **Play.** Start the tile. The first start unpacks the disc image into `/data/rotk/game/`, with a progress screen,
-   and then the game starts. From then on it starts straight from that folder, and **you can delete the `.iso`**.
+   `PPSA99063` folder to `/data/homebrew/` on the console. The **reKing** tile appears on the home screen after
+   about 30 seconds.
+2. **Your disc.** Copy your disc image to `/data/rotk/` on the console (create the folder), or to a `rotk` folder (or
+   the top) of a USB drive.
+3. **Play.** Start the tile. The first start unpacks the disc image into `/data/rotk/game/`, then the game starts.
+   From then on it starts straight away, and **you can delete the `.iso`**.
+
+<p align="center">
+  <img src="docs/media/unpack.png" alt="The first-start screen: Unpacking your disc image, 23%" width="70%">
+  <br>
+  <sub>The first start.</sub>
+</p>
 
 Already have the disc's files (`default.xbe` and the `Data` folder)? Copy them to `/data/rotk/game/` instead. If the
 console has no room to unpack the image, the app plays from the `.iso` directly and says so. If the game is missing,
-damaged, or another game or release, a screen says so (press Cross to close it).
+damaged, or another game or release, a screen says so: press Cross to close it.
 
 **To update,** copy the new `PPSA99063` folder over the old one. Your saves, settings and the game's files in
 `/data/rotk/` are kept.
@@ -43,32 +104,47 @@ damaged, or another game or release, a screen says so (press Cross to close it).
 | Triggers | R2 / L2 |
 | Start / Back | Options / touchpad click |
 | Stick clicks | L3 / R3 |
+| | **L3 + R3:** the settings menu |
 
-Press **L3 + R3** at any time for the settings menu (L1 / R1 change page, Circle or Options to go back). For two
-players, sign in a second user on the PS5 (a guest is enough) and turn on their controller. Settings are in
-`/data/rotk/settings.toml`, saves in `/data/rotk/hdd/`; the app's `README.txt` has the details.
+Player 1 is the user who started the app. For two players, sign in a second user on the PS5 (a guest is enough) and
+turn on their controller.
 
-## Features
+## Settings
 
-- Native 4K output, rendered at 1080p, 1620p or 4K; 30 or 60 fps
-- PlayStation buttons throughout: the button pictures in hints and menus (Cross, Circle, Square, Triangle), "Press
-  OPTIONS", L2 / R2, the save messages say PS5, and the help screen while a level loads shows a PlayStation-layout
-  controller
-- An in-game settings menu: resolution, frame rate, V-Sync, fps counter, texture filtering, sharper menus, field of
-  view, draw distance, HUD placement, skippable videos, vibration, deadzones, damage, cheats
-- Every video can be skipped; the EA / New Line logos are skipped
-- Sharper menus at 4K: the menus' full-screen pictures redrawn four times larger, all text with crisp edges, and the
-  HUD's and menus' small pictures redrawn four times larger
-- Two players, saves on the console
-- No logging while you play
+Press **L3 + R3** at any time; the game stands still behind the menu. L1 / R1 change page, Cross chooses, and
+Circle, Options or L3 + R3 go back to the game. Changes apply at once and are saved when you close the menu, except
+those marked "(next start)".
+
+| Page | Settings |
+| --- | --- |
+| **Picture** | Render resolution (1080p, 1620p, 4K), frame rate (30 or 60), V-Sync, frame rate counter, texture filtering and sharpness, smooth menus and HUD, sharper text and menus, field of view, draw distance, HUD at the screen edges, skipping videos and logos |
+| **Controls** | Vibration, stick deadzone, trigger threshold |
+| **Game** | Damage you take and deal, the game's own cheats |
+
+The app's `README.txt` describes every setting.
+
+## Your files
+
+| Where | What |
+| --- | --- |
+| `/data/homebrew/PPSA99063/` | The app |
+| `/data/rotk/game/` | The game's files, unpacked from your disc image at the first start |
+| `/data/rotk/settings.toml` | Settings |
+| `/data/rotk/hdd/` | Saves |
+| `/data/rotk/shadercache/` | Compiled shaders, made as you play (safe to delete) |
+| `/data/rotk/pc/Data/` | Optional: ROTK PC's Data folder, for its larger fonts and menu pictures |
+| `/data/rotk/logs/` | Logs, only while `/data/rotk/logging-on` exists |
 
 ## Reporting a problem
 
-Open an [issue](../../issues): say what you were doing, what you expected and what happened. To get a log, create an
-empty file `/data/rotk/logging-on` on the console and start the game; attach the newest `/data/rotk/logs/rotkx_*.log`
-and `stderr.log`, then delete `logging-on` again. **Never attach game files or disc images.**
+Open an [issue](../../issues): say what you were doing, what you expected and what happened, with a screenshot if you
+can. To get a log, create an empty file `/data/rotk/logging-on` on the console and start the game; attach the newest
+`/data/rotk/logs/rotkx_*.log` and `stderr.log`, then delete `logging-on` again. **Never attach game files or disc
+images.**
 
 ## For developers
+
+Players don't need any of this: the [Releases](../../releases/latest) have the app ready to copy.
 
 ### Building
 
@@ -133,7 +209,7 @@ workflows from forks don't get them. **Actions > Build reKing > Run workflow**; 
 it straight away, otherwise it is a draft only you see. A run takes roughly half an hour, plus about 20 minutes when
 the PS5 toolchain isn't kept yet. "Only the PS5 toolchain" prepares that part without a `default.xbe`.
 
-## How it fits together
+### How it fits together
 
 - [Athelas](https://github.com/Shagg88/Athelas) 1.8.2 by Shagg: The Return of the King's Xbox port (its hooks,
   settings, menus, fonts, button pictures) and the SDK it ships, built on
